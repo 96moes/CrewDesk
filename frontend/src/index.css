@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
+
+  /* Primary teal */
+  --color-primary-50: #effafb;
+  --color-primary-100: #d9f3f5;
+  --color-primary-200: #b5e7eb;
+  --color-primary-300: #8bd9df;
+  --color-primary-400: #6dccd4;
+  --color-primary-500: #59c4cf;
+  --color-primary-600: #277e87;
+  --color-primary-700: #206970;
+  --color-primary-800: #18535a;
+  --color-primary-900: #123f45;
+  --color-primary-950: #0a292e;
+
+  /* Warm coral complements the teal without competing with it. */
+  --color-accent-50: #fbf2ee;
+  --color-accent-100: #f5e2d9;
+  --color-accent-200: #eac2b2;
+  --color-accent-300: #d99c84;
+  --color-accent-400: #c47760;
+  --color-accent-500: #a85c46;
+  --color-accent-600: #894a3a;
+  --color-accent-700: #6c3b31;
+  --color-accent-800: #512f29;
+  --color-accent-900: #39231f;
+
+  /* Teal-tinted neutral scale for text, borders, and surfaces. */
+  --color-gray-50: #f6f9f9;
+  --color-gray-100: #edf2f2;
+  --color-gray-200: #dce5e5;
+  --color-gray-300: #c4d1d2;
+  --color-gray-400: #91a3a5;
+  --color-gray-500: #687b7d;
+  --color-gray-600: #4c5f61;
+  --color-gray-700: #35484a;
+  --color-gray-800: #253739;
+  --color-gray-900: #17282a;
+  --color-gray-950: #0b1718;
+
+  /* Harmonized semantic palettes. Dark foreground shades retain AA contrast. */
+  --color-success-50: #edf6f1;
+  --color-success-500: #347965;
+  --color-success-700: #245c50;
+  --color-success-800: #19483f;
+  --color-warning-50: #fbf5e8;
+  --color-warning-700: #755315;
+  --color-error-50: #fbefed;
+  --color-error-500: #b94f47;
+  --color-error-600: #9f3e38;
+  --color-error-700: #80342f;
+  --color-error-800: #642923;
+  --color-info-50: #effafb;
+  --color-info-500: #277e87;
+  --color-info-700: #206970;
+}
+
+/* ✅ Fix horizontal scroll */
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+html {
+  font-family: "Vazirmatn", sans-serif;
+}
+
+body {
+  @apply bg-primary-50 text-gray-800;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary-700);
+  outline-offset: 2px;
+}
