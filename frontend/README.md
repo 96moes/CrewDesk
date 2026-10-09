@@ -6,7 +6,7 @@ For full-stack setup and environment configuration, see the [root README](../REA
 
 ## Requirements
 
-- Node.js 24 LTS and npm 11 recommended.
+- Node.js `^20.19.0` or `>=22.12.0` (required by Vite 8); Node.js 24 LTS and npm 11 were used to verify this project.
 - A running CrewDesk backend (default API URL: `http://localhost:3000`).
 
 ## Setup

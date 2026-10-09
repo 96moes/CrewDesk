@@ -6,8 +6,8 @@ For full-stack setup, configuration, and database guidance, see the [root README
 
 ## Requirements
 
-- Node.js 24 LTS and npm 11 recommended.
-- PostgreSQL 16 or later.
+- Node.js `^20.19.0` or `>=22.12.0` (required by the frontend's Vite 8 dependency); Node.js 24 LTS and npm 11 were used to verify this project.
+- A PostgreSQL server reachable by the API. The application uses TypeORM and the `pg` driver without configuring a server-version constraint.
 
 ## Setup
 

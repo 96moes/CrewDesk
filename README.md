@@ -54,8 +54,8 @@ There is no root npm workspace or root-level package script; install and run eac
 
 ## Prerequisites
 
-- Node.js 24 LTS (the project was checked with Node 24); npm 11 is recommended.
-- PostgreSQL 16 or later, running locally or reachable by the API.
+- Node.js `^20.19.0` or `>=22.12.0` (required by Vite 8); Node.js 24 LTS and npm 11 were used to verify this project.
+- A PostgreSQL server reachable by the API. The application uses TypeORM with the `pg` driver and does not configure a PostgreSQL server version.
 
 ## Installation
 
