@@ -7,6 +7,7 @@ import { BulkMessage } from './entities/bulk-message.entity';
 import { User } from '../users/entities/user.entity';
 import { GroupsController } from './groups.controller';
 import { GroupsService } from './groups.service';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { GroupsService } from './groups.service';
       BulkMessage,
       User,
     ]),
+    AuthModule,
   ],
   controllers: [GroupsController],
   providers: [GroupsService],
