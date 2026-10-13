@@ -1,6 +1,6 @@
 // src/pages/UserDashboard.tsx
 import { useEffect, useState, type ReactNode } from "react";
-import PageHeader from "../components/PageHeader";
+import { Link } from "react-router";
 import {
     FaUserTie,
     FaProjectDiagram,
@@ -9,11 +9,27 @@ import {
     FaClock,
     FaHourglassHalf,
     FaPhone,
+    FaTachometerAlt,
+    FaUsersCog,
 } from "react-icons/fa";
+import PanelShell, { type PanelNavItem } from "../components/PanelShell";
 import { useAuthStore } from "../stores/authStore";
 import { getMyProfile, type ProfileResponse } from "../api/users";
 import { getMyProjects, type Project } from "../api/projects";
 import { getMyTasks, type Task, type TaskStatus } from "../api/tasks";
+
+/**
+ * The generic signed-in dashboard, and the default landing page after login.
+ *
+ * The layout comes from PanelShell, which the admin panel renders too, so this page has the same
+ * top bar and sidebar as the panel rather than the public header and footer. Only these two items
+ * are in its navigation, because it is the whole of this user's area; groups live in the panel
+ * alongside it and are linked here so a group leader can find them.
+ */
+const USER_NAV: PanelNavItem[] = [
+    { to: "/dashboard/user", label: "داشبورد من", icon: <FaTachometerAlt />, end: true },
+    { to: "/dashboard/groups", label: "گروه‌ها", icon: <FaUsersCog /> },
+];
 
 const ROLE_LABELS: Record<string, string> = {
     REGISTRAR: "ثبت‌کننده",
@@ -81,17 +97,21 @@ export default function UserDashboard() {
 
     if (loading && !profile) {
         return (
-            <div className="py-10 text-center text-gray-500">
-                در حال بارگذاری اطلاعات...
-            </div>
+            <PanelShell title="داشبورد من" nav={USER_NAV}>
+                <div className="py-10 text-center text-gray-500">
+                    در حال بارگذاری اطلاعات...
+                </div>
+            </PanelShell>
         );
     }
 
     if (error) {
         return (
-            <div className="rounded-xl bg-error-50 p-6 text-sm text-error-700">
-                {error}
-            </div>
+            <PanelShell title="داشبورد من" nav={USER_NAV}>
+                <div className="rounded-xl bg-error-50 p-6 text-sm text-error-700">
+                    {error}
+                </div>
+            </PanelShell>
         );
     }
 
@@ -99,11 +119,15 @@ export default function UserDashboard() {
     const progress = tasks.length ? Math.round((doneCount / tasks.length) * 100) : 0;
 
     return (
-        <div>
-            <PageHeader
-                title={`داشبورد ${profile?.username ?? user?.username ?? ""}`}
-                subtitle="اطلاعات حساب، مسئول مستقیم و پروژه‌های در دست اجرا"
-            />
+        <PanelShell title="داشبورد من" nav={USER_NAV}>
+            <div className="mb-6">
+                <h1 className="text-2xl font-bold text-primary-800">
+                    داشبورد {profile?.username ?? user?.username ?? ""}
+                </h1>
+                <p className="mt-1 text-sm text-gray-500">
+                    اطلاعات حساب، مسئول مستقیم و پروژه‌های در دست اجرا
+                </p>
+            </div>
 
             {/* Top cards */}
             <div className="grid gap-4 md:grid-cols-3">
@@ -277,12 +301,12 @@ export default function UserDashboard() {
                 <div className="mt-6 rounded-xl border border-primary-200 bg-primary-50 p-5 text-sm text-primary-800">
                     شما با نقش <b>مدیر</b> وارد شده‌اید. برای مدیریت کاربران، پروژه‌ها و
                     وظایف می‌توانید به{" "}
-                    <a href="/dashboard" className="font-medium underline">
+                    <Link to="/dashboard" className="font-medium underline">
                         داشبورد مدیریتی
-                    </a>{" "}
+                    </Link>{" "}
                     مراجعه کنید.
                 </div>
             )}
-        </div>
+        </PanelShell>
     );
 }

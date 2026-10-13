@@ -337,13 +337,20 @@ frontend/dist/
 ├── apple-touch-icon.png    iOS home screen
 ├── android-chrome-*.png    Android home screen
 ├── site.webmanifest        app name and icons
+├── fonts/                  self-hosted Vazirmatn (served by the /fonts/ block)
 ├── og-image.png            social preview image
 └── assets/                 hashed JS and CSS
 ```
 
-These are ordinary static files, and the nginx configuration serves them directly. The one case
-worth knowing about: `favicon.ico` and `site.webmanifest` are exact-match locations so the SPA
-fallback can never serve `index.html` in their place.
+These are ordinary static files, and the nginx configuration serves them directly. Two cases are
+worth knowing about:
+
+- `favicon.ico` and `site.webmanifest` have exact-match locations so the SPA fallback can never
+  serve `index.html` in their place.
+- `fonts/` has its own `location /fonts/` block. Without it the root-level allow-list would not
+  match the subdirectory, the fallback would answer with `index.html`, the browser would reject
+  the font on its MIME type, and **every Persian screen would quietly fall back to system fonts**.
+  The site would still look broadly fine, which is what makes it easy to miss.
 
 Confirm the origin baked into the build before uploading:
 
@@ -901,6 +908,12 @@ curl -sS -o /dev/null -w 'webmanifest:    %{http_code} %{content_type}\n' \
 
 # 13. The manifest is valid JSON, not the SPA fallback HTML
 curl -sS https://crewdesk.example.com/site.webmanifest | head -5
+
+# 14. The self-hosted font is served with the right type, not as HTML.
+#     A 200 with content_type text/html here means the fallback swallowed it and the
+#     Persian UI is silently using system fonts.
+curl -sS -o /dev/null -w 'font: %{http_code} %{content_type} %{size_download} bytes\n' \
+  https://crewdesk.example.com/fonts/Vazirmatn-variable.woff2
 ```
 
 Step 7 returning `{"access_token":"…","role":"ADMIN"}` means the whole chain works: TLS → nginx →
@@ -1058,6 +1071,7 @@ by itself. Verify once with `sudo reboot`, then re-run step 13.
 | Link previews show no image | `og:image` missing from the build output, or prerendering was skipped | `ls /var/www/crewdesk/og-image.png`; confirm the prerender step ran (it warns when `og:image` is absent) |
 | Browser tab shows a blank or generic icon | The icon files were not uploaded | `ls /var/www/crewdesk/favicon.*`; then hard-refresh, because browsers cache favicons aggressively |
 | `favicon.svg` renders as a plain teal square | The SVG glyph path is malformed — this fails silently, leaving only the background tile | `npm run icons:generate` then `npm run icons:verify`, which fails when the glyph is missing |
+| Persian text renders in Tahoma / a system font | `/fonts/Vazirmatn-variable.woff2` is not being served as a font — usually a missing `location /fonts/` block, so the SPA fallback returned `index.html` | Run check 14 above; `content_type` must be `font/woff2` |
 | Pages are not prerendered (crawlers see an empty shell) | No Chrome/Chromium/Edge on the build machine, so the step was skipped | Install a browser or set `CHROME_PATH`, then rebuild; the skip is warned about, not silent |
 | API returns 502 from nginx | The Node process is down or not listening on 3000 | `systemctl status crewdesk-api` and `journalctl -u crewdesk-api -n 80` |
 | API returns 500 on every endpoint | Database connection or credentials | Check the journal for a `pg` error; re-test with the step 3 `psql` command |

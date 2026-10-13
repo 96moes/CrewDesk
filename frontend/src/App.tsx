@@ -33,11 +33,9 @@ export default function App() {
 
       <Routes>
         {/*
-          Public site and the signed-in user area.
-          These share the public chrome: the top navigation and the footer.
+          Public site.
         */}
         <Route element={<MainLayout />}>
-          {/* Public */}
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/gallery" element={<Gallery />} />
@@ -48,27 +46,28 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          {/* Any logged-in user */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard/user" element={<UserDashboard />} />
-          </Route>
-
           <Route path="*" element={<NotFound />} />
         </Route>
 
         {/*
-          Panel — deliberately OUTSIDE MainLayout.
+          Signed-in panel — deliberately OUTSIDE MainLayout, and shared by two routes so the frame
+          is identical for both (PanelShell renders it):
 
-          The public header and footer are site navigation; inside the panel they are wrong:
-          they compete with the panel nav, they wrap the tables in a max-width container, and
-          they offer links back into the public site. AdminLayout supplies its own shell.
+            /dashboard/user   the generic user dashboard
+            /dashboard/*      the panel, incl. group management for group leaders
 
-          The panel is NOT wrapped in AdminRoute as a whole. Group management lives here too,
-          but the backend grants group endpoints to any signed-in user — only the bulk-message
-          queue is ADMIN (see backend/src/groups/groups.controller.ts). So the parent guard is
+          The public header and footer are site navigation; inside a signed-in area they compete
+          with the panel nav, wrap the tables in a max-width column, and offer links back into the
+          public site. PanelShell carries its own "view site" link instead.
+
+          The panel is NOT wrapped in AdminRoute as a whole. Group management lives here too, but
+          the backend grants group endpoints to any signed-in user — only the bulk-message queue
+          is ADMIN (see backend/src/groups/groups.controller.ts). So the parent guard is
           ProtectedRoute and AdminRoute is applied per admin-only page.
         */}
         <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard/user" element={<UserDashboard />} />
+
           <Route path="/dashboard" element={<AdminLayout />}>
             {/* Admin-only pages */}
             <Route element={<AdminRoute />}>
