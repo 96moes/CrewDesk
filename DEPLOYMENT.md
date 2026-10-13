@@ -329,9 +329,21 @@ frontend/dist/
 ├── register/index.html     prerendered but marked noindex
 ├── robots.txt              generated
 ├── sitemap.xml             generated
+├── favicon.svg             brand mark (vector)
+├── favicon.ico             legacy browser fallback
+├── favicon-16x16.png       …
+├── favicon-32x32.png
+├── favicon-48x48.png
+├── apple-touch-icon.png    iOS home screen
+├── android-chrome-*.png    Android home screen
+├── site.webmanifest        app name and icons
 ├── og-image.png            social preview image
 └── assets/                 hashed JS and CSS
 ```
+
+These are ordinary static files, and the nginx configuration serves them directly. The one case
+worth knowing about: `favicon.ico` and `site.webmanifest` are exact-match locations so the SPA
+fallback can never serve `index.html` in their place.
 
 Confirm the origin baked into the build before uploading:
 
@@ -348,6 +360,21 @@ sitemap accuracy):
 
 ```bash
 npm run seo:verify
+```
+
+Icons are generated files too, and a broken one is easy to miss. This renders them in a real
+browser and asserts every icon loads and that `favicon.svg` actually contains the mark rather than
+only the background tile:
+
+```bash
+npm run icons:verify
+```
+
+Regenerate the icon set from the script if the branding changes (see the
+[frontend README](frontend/README.md#icons)):
+
+```bash
+npm run icons:generate
 ```
 
 ### 6.5 Assemble the release folder
@@ -861,6 +888,19 @@ curl -sS https://crewdesk.example.com/ | grep -o '<meta property="og:url"[^>]*>'
 # 11. The social preview image resolves (a 404 here breaks link previews)
 curl -sS -o /dev/null -w 'og-image: %{http_code} %{content_type}\n' \
   https://crewdesk.example.com/og-image.png
+
+# 12. Icons resolve, with the right types (a 404 here shows a blank tab icon)
+curl -sS -o /dev/null -w 'favicon.svg:    %{http_code} %{content_type}\n' \
+  https://crewdesk.example.com/favicon.svg
+curl -sS -o /dev/null -w 'favicon.ico:    %{http_code} %{content_type}\n' \
+  https://crewdesk.example.com/favicon.ico
+curl -sS -o /dev/null -w 'apple-touch:    %{http_code} %{content_type}\n' \
+  https://crewdesk.example.com/apple-touch-icon.png
+curl -sS -o /dev/null -w 'webmanifest:    %{http_code} %{content_type}\n' \
+  https://crewdesk.example.com/site.webmanifest
+
+# 13. The manifest is valid JSON, not the SPA fallback HTML
+curl -sS https://crewdesk.example.com/site.webmanifest | head -5
 ```
 
 Step 7 returning `{"access_token":"…","role":"ADMIN"}` means the whole chain works: TLS → nginx →
@@ -1016,6 +1056,8 @@ by itself. Verify once with `sudo reboot`, then re-run step 13.
 | `robots.txt` or `sitemap.xml` returns the app HTML | They were not generated, so the SPA fallback served `index.html` | Rebuild; the files are produced by the SEO pipeline. Check `ls /var/www/crewdesk/robots.txt` |
 | Search Console: "Crawled – currently not indexed" | Normal for a new site; also happens when a page has little unique content | Request indexing, and make sure each page has a distinct title and description |
 | Link previews show no image | `og:image` missing from the build output, or prerendering was skipped | `ls /var/www/crewdesk/og-image.png`; confirm the prerender step ran (it warns when `og:image` is absent) |
+| Browser tab shows a blank or generic icon | The icon files were not uploaded | `ls /var/www/crewdesk/favicon.*`; then hard-refresh, because browsers cache favicons aggressively |
+| `favicon.svg` renders as a plain teal square | The SVG glyph path is malformed — this fails silently, leaving only the background tile | `npm run icons:generate` then `npm run icons:verify`, which fails when the glyph is missing |
 | Pages are not prerendered (crawlers see an empty shell) | No Chrome/Chromium/Edge on the build machine, so the step was skipped | Install a browser or set `CHROME_PATH`, then rebuild; the skip is warned about, not silent |
 | API returns 502 from nginx | The Node process is down or not listening on 3000 | `systemctl status crewdesk-api` and `journalctl -u crewdesk-api -n 80` |
 | API returns 500 on every endpoint | Database connection or credentials | Check the journal for a `pg` error; re-test with the step 3 `psql` command |

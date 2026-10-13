@@ -19,11 +19,22 @@
   />
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
   <meta name="author" content="قوم سلمان" />
-  <meta name="theme-color" content="#277e87" />
+  <meta name="theme-color" content="#277e87" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#18535a" media="(prefers-color-scheme: dark)" />
 
-  <!-- Icons -->
+  <!--
+    Icons. Regenerate the whole set with:
+      python scripts/create-favicons.py --preview
+    The SVG is listed first so browsers that support it prefer the crisp vector version;
+    favicon.ico is the fallback that browsers request even when an SVG is declared.
+  -->
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="apple-touch-icon" href="/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+  <link rel="shortcut icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/site.webmanifest" />
 
   <!-- Open Graph: how links render on Telegram, WhatsApp, Instagram and LinkedIn -->
   <meta property="og:type" content="website" />

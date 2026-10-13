@@ -97,6 +97,40 @@ Two values must match the real deployment, and both are baked in at build time:
 When you add a page, add its title and description to `src/seo/routes.ts` and its path to
 `scripts/seo-routes.mjs`. The build fails until you do.
 
+## Icons
+
+The mark is the Persian letter **ق** — the first letter of «قوم سلمان» — in white on the brand
+teal gradient, inside a rounded square. A single glyph survives downscaling better than a
+detailed illustration, and it is immediately readable to the audience this site serves.
+
+Regenerate the whole set (font, palette and sizes all live in the script):
+
+```bash
+npm run icons:generate      # python scripts/create-favicons.py --preview
+```
+
+| File in `public/` | Used for |
+| --- | --- |
+| `favicon.svg` | Modern browsers and browser tabs. Glyph stored as an outline path from the font, so it needs no installed Persian font. |
+| `favicon.ico` | Fallback; browsers request it even when an SVG icon is declared. Contains 16/24/32/48/64 px frames. |
+| `favicon-16x16.png`, `favicon-32x32.png`, `favicon-48x48.png` | Explicit sizes for browsers that prefer PNG. |
+| `apple-touch-icon.png` | iOS home-screen icon. Opaque, because iOS ignores transparency. |
+| `android-chrome-192x192.png`, `android-chrome-512x512.png` | Android home screen and install prompts. |
+| `site.webmanifest` | App name, colors and the Android icon set. Not a full PWA — there is no service worker. |
+
+`--preview` also writes `scripts/_favicon-preview.png`, a sheet of the mark from 16 px to 256 px
+so the result can actually be checked rather than assumed.
+
+`npm run icons:verify` renders the set in a real browser and asserts two things that are easy to
+get wrong silently: every icon loads, and `favicon.svg` contains the glyph rather than only the
+tile. A malformed SVG path still renders the gradient, so a broken favicon otherwise looks fine
+until someone looks at a browser tab.
+
+Requirements for regenerating: Python with `Pillow`, `arabic-reshaper`, `python-bidi` and
+`fonttools`, plus a Persian font (`Vazirmatn`, `Vazir` or `Tahoma`) — pass `--font` to override
+detection. The script checks the usual per-user and system font directories on Windows, macOS and
+Linux.
+
 ## Scripts
 
 | Script | Command |
@@ -111,6 +145,8 @@ When you add a page, add its title and description to `src/seo/routes.ts` and it
 | `npm run seo:files` | Regenerate `robots.txt` and `sitemap.xml` |
 | `npm run seo:prerender` | Prerender public routes to static HTML |
 | `npm run seo:verify` | Audit the built `dist/` output |
+| `npm run icons:generate` | Regenerate the favicon and app-icon set |
+| `npm run icons:verify` | Render the icons in a browser and check them |
 
 The frontend declares React and React DOM `^19.2.8`, React Router `^8.3.1`, Tailwind CSS `^4.3.3`, Ant Design `^6.6.2`, and Vite `^8.2.2`. See `package.json` and `package-lock.json` for the full dependency set and resolved versions. No frontend test script is currently configured.
 

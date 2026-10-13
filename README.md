@@ -23,6 +23,7 @@ CrewDesk is a web application for managing projects, tasks, users, groups, and g
 - **Backend:** NestJS 12, TypeScript 6, TypeORM, Passport/JWT
 - **Frontend:** React 19, React Router 8, Vite 8, Tailwind CSS 4, Ant Design 6
 - **Frontend build:** a Node SEO pipeline that renders public routes to static HTML at build time
+- **Frontend assets:** generated icons and a social preview image, produced by scripts in `frontend/scripts/` and `deploy/scripts/`
 - **Database:** PostgreSQL, accessed through `pg`
 - **Package manager:** npm with a separate lockfile in each application
 
@@ -43,8 +44,8 @@ CrewDesk/
 │   ├── test/                End-to-end tests
 │   └── README.md
 ├── frontend/                React/Vite client
-│   ├── public/              Static files, including the social preview image
-│   ├── scripts/             Build-time SEO steps: check, generate, prerender, verify
+│   ├── public/              Favicons, social preview image, web app manifest
+│   ├── scripts/             Build steps: SEO check/generate/prerender/verify, icon generator
 │   ├── src/
 │   │   ├── api/             API clients
 │   │   ├── components/      Shared UI
