@@ -79,11 +79,12 @@ export default function Header() {
                 <div className="hidden md:flex items-center gap-3">
                     {token ? (
                         <>
-                            {/* Single dashboard link — goes to admin if ADMIN, else user */}
+                            {/* Single panel link — admins land on the dashboard, other
+                                signed-in users (group leaders) on the group page. */}
                             <Link
                                 to={dashboardTo}
                                 className="flex items-center gap-2 rounded-lg bg-primary-50 px-3 py-2 text-sm font-medium text-primary-800 hover:bg-primary-100"
-                                title={role === "ADMIN" ? "داشبورد مدیریتی" : "داشبورد من"}
+                                title={role === "ADMIN" ? "داشبورد مدیریتی" : "گروه‌های من"}
                             >
                                 {role === "ADMIN" ? (
                                     <FaUserShield size={18} />
@@ -91,12 +92,6 @@ export default function Header() {
                                     <FaUserCircle size={18} />
                                 )}
                                 {dashboardLabel}
-                            </Link>
-                            <Link
-                                to="/groups"
-                                className="rounded-lg border border-primary-200 px-3 py-2 text-sm font-medium text-primary-700 hover:bg-primary-50"
-                            >
-                                گروه‌های من
                             </Link>
 
                             <button
@@ -155,13 +150,6 @@ export default function Header() {
                                         <FaUserCircle size={18} />
                                     )}
                                     {dashboardLabel}
-                                </Link>
-                                <Link
-                                    to="/groups"
-                                    onClick={() => setOpen(false)}
-                                    className="mt-2 rounded-lg border border-primary-200 px-4 py-2 text-center text-sm font-medium text-primary-700"
-                                >
-                                    گروه‌های من
                                 </Link>
 
                                 <button

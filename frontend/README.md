@@ -4,6 +4,46 @@ The frontend is the CrewDesk React application, built and served with Vite. It c
 
 For full-stack setup and environment configuration, see the [root README](../README.md).
 
+## Layouts
+
+There are two shells, and the panel area deliberately does not use the public one.
+
+| Area | Routes | Shell |
+| --- | --- | --- |
+| Public site and signed-in users | `/`, `/about`, `/gallery`, `/education`, `/cooperation`, `/donations`, `/events`, `/login`, `/register`, `/dashboard/user` | `layouts/MainLayout.tsx` — top navigation and footer |
+| Panel | `/dashboard` (overview), `/dashboard/users`, `/dashboard/projects`, `/dashboard/tasks`, `/dashboard/bulk-messages`, `/dashboard/groups` | `pages/admin/AdminLayout.tsx` — its own frame, no public header or footer |
+
+The panel route sits **outside** `MainLayout` in `src/App.tsx`. That is intentional: the public
+header and footer are site navigation, and inside the panel they would compete with the panel nav,
+wrap the tables in a max-width column, and push visitors back out to the public pages.
+`AdminLayout` supplies a compact top bar (brand, "view site", logout), the panel navigation — a
+horizontally scrollable strip at the top on small screens, a sticky sidebar beside the content
+from `lg` up — and a full-width content column.
+
+### Who can reach what
+
+The panel hosts two audiences, so it is **not** wrapped in `AdminRoute` as a whole. The parent
+guard is `ProtectedRoute` (any signed-in user) and `AdminRoute` is applied per admin-only page:
+
+| Route | Roles |
+| --- | --- |
+| `/dashboard`, `/dashboard/users`, `/dashboard/projects`, `/dashboard/tasks`, `/dashboard/bulk-messages` | `ADMIN` |
+| `/dashboard/groups` | any signed-in user |
+
+That split mirrors the backend: in `backend/src/groups/groups.controller.ts` the group endpoints
+(`/groups/my`, create group, add/remove member, submit message) have **no** `@Roles` restriction —
+they belong to whichever group leader is signed in — while `GET`/`PATCH /groups/admin/bulk-messages`
+are `ADMIN` only.
+
+`AdminRoute` redirects a non-admin to `/dashboard/groups`, which is the panel page they can use;
+sending them to `/dashboard/user` instead would bounce them out of the panel entirely. The panel
+navigation is filtered by role for the same reason: an administrator sees every item, while a
+group leader sees only **گروه‌ها** and the top bar title changes to match, rather than calling them
+an administrator.
+
+`/dashboard/user` is the generic signed-in dashboard (profile, own projects and tasks). It lives
+in `MainLayout` and is unrelated to the panel.
+
 ## Requirements
 
 - Node.js `^20.19.0` or `>=22.12.0` (required by Vite 8); Node.js 24 LTS and npm 11 were used to verify this project.

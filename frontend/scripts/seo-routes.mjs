@@ -25,7 +25,7 @@ export const ROUTES = [
   { path: "/login", index: false },
   { path: "/register", index: false },
   { path: "/dashboard/user", index: false, prerender: false },
-  { path: "/groups", index: false, prerender: false },
+  { path: "/dashboard/groups", index: false, prerender: false },
   { path: "/dashboard", index: false, prerender: false },
   { path: "/dashboard/users", index: false, prerender: false },
   { path: "/dashboard/projects", index: false, prerender: false },

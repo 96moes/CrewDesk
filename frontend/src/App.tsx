@@ -32,37 +32,57 @@ export default function App() {
       <SeoRoute />
 
       <Routes>
-      <Route element={<MainLayout />}>
-        {/* Public */}
-        <Route path="/" element={<Home />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/gallery" element={<Gallery />} />
-        <Route path="/education" element={<Education />} />
-        <Route path="/cooperation" element={<Cooperation />} />
-        <Route path="/donations" element={<Donations />} />
-        <Route path="/events" element={<Events />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        {/*
+          Public site and the signed-in user area.
+          These share the public chrome: the top navigation and the footer.
+        */}
+        <Route element={<MainLayout />}>
+          {/* Public */}
+          <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/gallery" element={<Gallery />} />
+          <Route path="/education" element={<Education />} />
+          <Route path="/cooperation" element={<Cooperation />} />
+          <Route path="/donations" element={<Donations />} />
+          <Route path="/events" element={<Events />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
-        {/* Any logged-in user */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard/user" element={<UserDashboard />} />
-          <Route path="/groups" element={<GroupsManage />} />
+          {/* Any logged-in user */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard/user" element={<UserDashboard />} />
+          </Route>
+
+          <Route path="*" element={<NotFound />} />
         </Route>
 
-        {/* Admin only — nested under AdminLayout */}
-        <Route element={<AdminRoute />}>
+        {/*
+          Panel — deliberately OUTSIDE MainLayout.
+
+          The public header and footer are site navigation; inside the panel they are wrong:
+          they compete with the panel nav, they wrap the tables in a max-width container, and
+          they offer links back into the public site. AdminLayout supplies its own shell.
+
+          The panel is NOT wrapped in AdminRoute as a whole. Group management lives here too,
+          but the backend grants group endpoints to any signed-in user — only the bulk-message
+          queue is ADMIN (see backend/src/groups/groups.controller.ts). So the parent guard is
+          ProtectedRoute and AdminRoute is applied per admin-only page.
+        */}
+        <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<AdminLayout />}>
-            <Route index element={<Overview />} />
-            <Route path="users" element={<UsersManage />} />
-            <Route path="projects" element={<ProjectsManage />} />
-            <Route path="tasks" element={<TasksManage />} />
-            <Route path="bulk-messages" element={<BulkMessages />} />
+            {/* Admin-only pages */}
+            <Route element={<AdminRoute />}>
+              <Route index element={<Overview />} />
+              <Route path="users" element={<UsersManage />} />
+              <Route path="projects" element={<ProjectsManage />} />
+              <Route path="tasks" element={<TasksManage />} />
+              <Route path="bulk-messages" element={<BulkMessages />} />
+            </Route>
+
+            {/* Group leaders manage their own groups; no role restriction */}
+            <Route path="groups" element={<GroupsManage />} />
           </Route>
         </Route>
-
-        <Route path="*" element={<NotFound />} />
-      </Route>
       </Routes>
     </>
   );

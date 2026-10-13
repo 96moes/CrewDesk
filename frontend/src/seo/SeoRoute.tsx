@@ -10,7 +10,7 @@ import { NOT_FOUND_SEO, seoForPath } from "./routes";
  * `noindex` because they are behind a login: indexing a login wall produces "soft 404"
  * style results and wastes crawl budget on pages no visitor can read.
  */
-const NOINDEX_PREFIXES = ["/dashboard", "/groups", "/login", "/register"];
+const NOINDEX_PREFIXES = ["/dashboard", "/dashboard/user", "/login", "/register"];
 
 function isNoIndex(pathname: string): boolean {
   return NOINDEX_PREFIXES.some(

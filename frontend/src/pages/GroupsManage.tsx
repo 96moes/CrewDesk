@@ -1,5 +1,4 @@
 import { useEffect, useState, type FormEvent } from "react";
-import PageHeader from "../components/PageHeader";
 import { useAuthStore } from "../stores/authStore";
 import {
   addGroupMember,
@@ -114,10 +113,12 @@ export default function GroupsManage() {
 
   return (
     <div>
-      <PageHeader
-        title="گروه‌های من"
-        subtitle="گروه بسازید، اعضا را با شماره تلفن اضافه کنید و برای همه یک پیام ثبت کنید."
-      />
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-primary-800">گروه‌های من</h1>
+        <p className="mt-1 text-sm text-gray-500">
+          گروه بسازید، اعضا را با شماره تلفن اضافه کنید و برای همه یک پیام ثبت کنید.
+        </p>
+      </div>
 
       {error && (
         <div role="alert" className="mb-4 rounded-lg bg-error-50 px-4 py-3 text-sm text-error-700">
