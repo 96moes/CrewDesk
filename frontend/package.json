@@ -5,9 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && npm run seo:check && npm run seo:files && npm run seo:prerender",
+    "build:prod": "tsc -b && vite build && npm run seo:check && node scripts/generate-seo-files.mjs --production && node scripts/prerender.mjs --fail-on-error",
+    "build:spa": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "seo:check": "node scripts/check-seo.mjs",
+    "seo:files": "node scripts/generate-seo-files.mjs",
+    "seo:prerender": "node scripts/prerender.mjs",
+    "seo:verify": "node scripts/verify-seo.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
@@ -27,6 +33,7 @@
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^6.1.0",
     "oxlint": "^1.79.0",
+    "puppeteer-core": "^25.13.0",
     "typescript": "~6.0.2",
     "vite": "^8.2.2"
   }

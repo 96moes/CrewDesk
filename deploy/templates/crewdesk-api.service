@@ -1,0 +1,44 @@
+[Unit]
+Description=CrewDesk API (NestJS)
+Documentation=https://github.com/your-org/crewdesk
+After=network-online.target postgresql.service
+Wants=network-online.target
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User=crewdesk
+Group=crewdesk
+
+# The application reads .env from its working directory, so this must be the app root.
+WorkingDirectory=/opt/crewdesk/backend
+Environment=NODE_ENV=production
+
+# `npm run start:prod` == `node dist/main`
+ExecStart=/usr/bin/node dist/main
+Restart=always
+RestartSec=5
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=crewdesk-api
+
+# --- Hardening (safe for this app: it only needs the DB over TCP and no local files) ---
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+# The app files live under /opt, so /home and /root can stay hidden.
+ProtectHome=true
+
+# NOTE ON UPLOADS: this app has no file-upload endpoints, so /opt is read-only above.
+# If you add them, replace the ProtectSystem=full line with ProtectSystem=strict and
+# allow one writable directory, or writes will fail with EROFS:
+#   ProtectSystem=strict
+#   ReadWritePaths=/opt/crewdesk/backend/uploads
+
+[Install]
+WantedBy=multi-user.target

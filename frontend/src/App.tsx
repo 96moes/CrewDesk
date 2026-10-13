@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router";
 import MainLayout from "./layouts/MainLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
+import SeoRoute from "./seo/SeoRoute";
 
 import Home from "./pages/Home";
 import About from "./pages/About";
@@ -26,7 +27,11 @@ import GroupsManage from "./pages/GroupsManage";
 
 export default function App() {
   return (
-    <Routes>
+    <>
+      {/* Route-level <title>, description, canonical and robots tags. */}
+      <SeoRoute />
+
+      <Routes>
       <Route element={<MainLayout />}>
         {/* Public */}
         <Route path="/" element={<Home />} />
@@ -58,6 +63,7 @@ export default function App() {
 
         <Route path="*" element={<NotFound />} />
       </Route>
-    </Routes>
+      </Routes>
+    </>
   );
 }

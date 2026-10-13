@@ -3,13 +3,127 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>قوم سلمان</title>
+
+  <!--
+    Replace https://quomsalman.ir with your real origin, and set VITE_SITE_URL in
+    frontend/.env.production. Google uses the canonical URL to pick which address it indexes.
+  -->
+  <link rel="canonical" href="https://quomsalman.ir/" />
+
+  <!-- Primary -->
+  <title>قوم سلمان | معارف مهدوی، دوره‌های آموزشی و فعالیت‌های فرهنگی</title>
+  <meta
+    name="description"
+    content="قوم سلمان مجموعه‌ای مردمی برای ترویج معارف مهدوی و آخرزمان است؛ دوره‌های آموزشی، رویدادهای فرهنگی، فرصت‌های همکاری و کمک‌های مردمی."
+  />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+  <meta name="author" content="قوم سلمان" />
+  <meta name="theme-color" content="#277e87" />
+
+  <!-- Icons -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/favicon.svg" />
+
+  <!-- Open Graph: how links render on Telegram, WhatsApp, Instagram and LinkedIn -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="قوم سلمان" />
+  <meta property="og:locale" content="fa_IR" />
+  <meta property="og:url" content="https://quomsalman.ir/" />
+  <meta property="og:title" content="قوم سلمان | معارف مهدوی، دوره‌های آموزشی و فعالیت‌های فرهنگی" />
+  <meta
+    property="og:description"
+    content="مجموعه‌ای مردمی برای ترویج معارف مهدوی: دوره‌های آموزشی، رویدادهای فرهنگی، فرصت‌های همکاری و کمک‌های مردمی."
+  />
+  <meta property="og:image" content="https://quomsalman.ir/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="قوم سلمان — در مسیر زمینه‌سازی ظهور" />
+
+  <!-- Twitter / X -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="قوم سلمان | معارف مهدوی، دوره‌های آموزشی و فعالیت‌های فرهنگی" />
+  <meta
+    name="twitter:description"
+    content="مجموعه‌ای مردمی برای ترویج معارف مهدوی: دوره‌های آموزشی، رویدادهای فرهنگی، فرصت‌های همکاری و کمک‌های مردمی."
+  />
+  <meta name="twitter:image" content="https://quomsalman.ir/og-image.png" />
+
+  <!-- Fonts: self-hosted so the RTL Persian UI does not depend on a third-party CDN.
+       See DEPLOYMENT.md — the Vazirmatn files are not in this repository yet. -->
+  <style>
+    #seo-fallback {
+      margin: 0;
+      padding: 2rem 1rem;
+      font-family: "Vazirmatn", Tahoma, system-ui, sans-serif;
+      line-height: 1.9;
+      color: #18535a;
+      text-align: center;
+    }
+
+    #seo-fallback a {
+      color: #277e87;
+    }
+  </style>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://quomsalman.ir/#organization",
+        "name": "قوم سلمان",
+        "alternateName": "Quom Salman",
+        "url": "https://quomsalman.ir/",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://quomsalman.ir/og-image.png"
+        },
+        "description": "مجموعه‌ای مردمی برای ترویج معارف مهدوی و آخرزمان، برگزاری دوره‌های آموزشی و رویدادهای فرهنگی.",
+        "foundingDate": "2024"
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://quomsalman.ir/#website",
+        "url": "https://quomsalman.ir/",
+        "name": "قوم سلمان",
+        "description": "معارف مهدوی، دوره‌های آموزشی و فعالیت‌های فرهنگی",
+        "inLanguage": "fa-IR",
+        "publisher": { "@id": "https://quomsalman.ir/#organization" }
+      }
+    ]
+  }
+  </script>
 </head>
 
 <body>
   <div id="root"></div>
+
+  <!-- Crawlers that do not execute JavaScript see this instead of a blank page.
+       The prerender step replaces this block with the real rendered HTML.
+       src/main.tsx removes the no-JS fallback before React mounts. -->
+  <noscript>
+    <div id="seo-fallback">
+      <h1>قوم سلمان</h1>
+      <p>
+        مجموعه‌ای مردمی برای ترویج معارف مهدوی و آخرزمان؛ دوره‌های آموزشی، رویدادهای فرهنگی،
+        فرصت‌های همکاری و کمک‌های مردمی.
+      </p>
+      <p>
+        برای مشاهده کامل سایت، جاوااسکریپت مرورگر خود را فعال کنید. بخش‌های اصلی:
+      </p>
+      <ul style="list-style: none; padding: 0">
+        <li><a href="/about">معرفی و درباره ما</a></li>
+        <li><a href="/education">آموزش‌ها و دوره‌ها</a></li>
+        <li><a href="/gallery">گالری ویدیو و عکس</a></li>
+        <li><a href="/cooperation">فرصت‌های همکاری</a></li>
+        <li><a href="/donations">کمک‌های مردمی</a></li>
+        <li><a href="/events">رویدادهای برگزار شده</a></li>
+      </ul>
+    </div>
+  </noscript>
+
   <script type="module" src="/src/main.tsx"></script>
 </body>
 
