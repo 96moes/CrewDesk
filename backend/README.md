@@ -41,6 +41,40 @@ The seeded admin is created only when the username is not already present. The r
 
 `SWAGGER_USER` and `SWAGGER_PASSWORD` are not currently active: Swagger's optional Basic Auth middleware is commented out. Swagger UI is available at `/docs`.
 
+## Gallery (`/media`)
+
+The public gallery page is fed by this module; it previously rendered hardcoded placeholders.
+
+| Method | Route | Access | Purpose |
+| --- | --- | --- | --- |
+| `GET` | `/media` | public | Published items only, ordered by `sortOrder` then newest |
+| `GET` | `/media/admin/all` | `ADMIN` | Every item, including unpublished drafts |
+| `GET` | `/media/:id` | `ADMIN` | A single item |
+| `POST` | `/media` | `ADMIN` | Create |
+| `PATCH` | `/media/:id` | `ADMIN` | Update |
+| `DELETE` | `/media/:id` | `ADMIN` | Delete |
+
+An item is a `photo` or a `video`. Media is referenced by URL rather than uploaded, because the
+realistic sources are Aparat/YouTube links and images hosted elsewhere.
+
+**Video URLs are normalised on save.** An admin pastes the page URL they copied from the address
+bar, and the API derives a safe player URL into `embedUrl`:
+
+| Pasted | Stored `embedUrl` |
+| --- | --- |
+| `https://www.aparat.com/v/abc123` | `https://www.aparat.com/video/video/embed/videohash/abc123/vt/frame` |
+| `https://youtu.be/dQw4w9WgXcQ` | `https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ` |
+| `https://www.youtube.com/watch?v=…&t=42s` | `https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ` |
+
+A YouTube thumbnail is derived from the id; Aparat has no predictable pattern, so an admin can
+supply `thumbnailUrl`. A video URL from any other host is **rejected with 400** rather than stored,
+so the gallery cannot end up showing a dead player. Normalising on the server also means raw
+`<iframe>` markup is never accepted from a client.
+
+`published: false` hides an item from `GET /media` — the filter is applied in SQL, so a draft cannot
+leak to an anonymous visitor. `linkUrl`, when set, makes the gallery render the item as a link
+instead of an inline figure or player.
+
 ## Development and production
 
 ```bash
@@ -82,7 +116,7 @@ The backend declares NestJS `^12`, TypeORM `^1.1.1`, `pg` `^8.23.0`, and TypeScr
 
 ## Tests
 
-Run `npm test` for unit specs and `npm run test:e2e` for end-to-end tests. The unit Vitest config selects `*.spec.ts` files; none are currently included. The e2e suite imports the full application module and therefore needs PostgreSQL configured and available. The repository currently includes `test/app.e2e-spec.ts`.
+Run `npm test` for unit specs and `npm run test:e2e` for end-to-end tests. The unit Vitest config selects `*.spec.ts` files; `src/media/utils/video-url.spec.ts` covers the video URL parser. The e2e suite imports the full application module and therefore needs PostgreSQL configured and available. The repository currently includes `test/app.e2e-spec.ts`.
 
 ## License
 

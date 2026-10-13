@@ -1,6 +1,6 @@
 # CrewDesk
 
-CrewDesk is a web application for managing projects, tasks, users, groups, and group message delivery. Group leaders can maintain member lists and submit a message for each member; administrators use a copy-and-paste queue to track delivery.
+CrewDesk is a web application for managing projects, tasks, users, groups, and group message delivery. Group leaders can maintain member lists and submit a message for each member; administrators use a copy-and-paste queue to track delivery. The public site also serves an administrator-managed photo and video gallery.
 
 ## Contents
 
@@ -37,6 +37,7 @@ CrewDesk/
 │   ├── src/
 │   │   ├── auth/            JWT authentication and role guards
 │   │   ├── groups/          Groups and per-recipient bulk messages
+│   │   ├── media/           Gallery items (photos and video embeds)
 │   │   ├── projects/
 │   │   ├── social-links/
 │   │   ├── tasks/

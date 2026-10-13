@@ -6,6 +6,7 @@ import {
     FaTasks,
     FaEnvelope,
     FaUsersCog,
+    FaImages,
 } from "react-icons/fa";
 import PanelShell, { type PanelNavItem } from "../../components/PanelShell";
 import { useAuthStore } from "../../stores/authStore";
@@ -31,6 +32,7 @@ const ADMIN_LINKS: PanelNavItem[] = [
     { to: "/dashboard/projects", label: "پروژه‌ها", icon: <FaProjectDiagram /> },
     { to: "/dashboard/tasks", label: "وظایف", icon: <FaTasks /> },
     { to: "/dashboard/bulk-messages", label: "صف پیام‌ها", icon: <FaEnvelope /> },
+    { to: "/dashboard/gallery", label: "گالری", icon: <FaImages /> },
 ];
 
 /** Reachable by any signed-in user, including group leaders. */

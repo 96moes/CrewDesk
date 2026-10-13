@@ -135,6 +135,12 @@ export const ROUTES: RouteSeo[] = [
     description:
       "پیام‌های ثبت‌شده برای اعضای گروه‌ها را یک‌به‌یک کپی کنید و وضعیت ارسال هر پیام را ثبت کنید.",
   },
+  {
+    path: "/dashboard/gallery",
+    title: "مدیریت گالری | قوم سلمان",
+    description:
+      "افزودن، ویرایش و حذف تصاویر و ویدیوهای گالری، تعیین ترتیب نمایش و انتشار یا پنهان‌سازی هر آیتم.",
+  },
 ];
 
 /** Routes that belong in sitemap.xml and get prerendered to static HTML. */

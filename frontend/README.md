@@ -4,6 +4,31 @@ The frontend is the CrewDesk React application, built and served with Vite. It c
 
 For full-stack setup and environment configuration, see the [root README](../README.md).
 
+## Data sources
+
+Public pages read from the API rather than from hardcoded arrays.
+
+| Page | Endpoint | Notes |
+| --- | --- | --- |
+| `/gallery` | `GET /media` | Admin-managed photos and video embeds |
+| Footer social icons | `GET /social-links` | |
+
+`/gallery` was previously a hardcoded list of placeholder images and two identical YouTube videos.
+It now loads real rows and handles all three non-happy states, because a fresh install has no media
+at all — so the empty state is the normal first impression, not an edge case:
+
+- **Loading** — skeleton cards, so the grid does not jump when content arrives.
+- **Error** — a message plus a retry action that refetches.
+- **Empty** — explains that content is added from the panel, and the tab that has content is
+  selected automatically (a gallery with only videos does not open on an empty photo grid).
+
+Content is managed at `/dashboard/gallery` (`pages/admin/MediaManage.tsx`). That page keeps its own
+state rather than adding a store, because the gallery is not read anywhere else in the app.
+
+Video players come from `embedUrl`, which the **API** derives from the URL an admin pastes — see
+[Gallery in the backend README](../backend/README.md#gallery-media). The frontend never builds a
+player URL itself, so the two can never disagree about what is embeddable.
+
 ## Layouts
 
 There are two shells. Everything signed in uses the panel shell; the public pages use the site
@@ -12,7 +37,7 @@ shell.
 | Area | Routes | Shell |
 | --- | --- | --- |
 | Public | `/`, `/about`, `/gallery`, `/education`, `/cooperation`, `/donations`, `/events`, `/login`, `/register` | `layouts/MainLayout.tsx` — top navigation and footer |
-| Signed in | `/dashboard/user`, `/dashboard`, `/dashboard/users`, `/dashboard/projects`, `/dashboard/tasks`, `/dashboard/bulk-messages`, `/dashboard/groups` | `components/PanelShell.tsx` — top bar, sidebar, no public header or footer |
+| Signed in | `/dashboard/user`, `/dashboard`, `/dashboard/users`, `/dashboard/projects`, `/dashboard/tasks`, `/dashboard/bulk-messages`, `/dashboard/gallery`, `/dashboard/groups` | `components/PanelShell.tsx` — top bar, sidebar, no public header or footer |
 
 The signed-in routes sit **outside** `MainLayout` in `src/App.tsx`. That is intentional: the public
 header and footer are site navigation, and inside a signed-in area they compete with the panel
@@ -40,7 +65,7 @@ signed-in user) and `AdminRoute` is applied per admin-only page:
 
 | Route | Roles |
 | --- | --- |
-| `/dashboard`, `/dashboard/users`, `/dashboard/projects`, `/dashboard/tasks`, `/dashboard/bulk-messages` | `ADMIN` |
+| `/dashboard`, `/dashboard/users`, `/dashboard/projects`, `/dashboard/tasks`, `/dashboard/bulk-messages`, `/dashboard/gallery` | `ADMIN` |
 | `/dashboard/user`, `/dashboard/groups` | any signed-in user |
 
 That split mirrors the backend: in `backend/src/groups/groups.controller.ts` the group endpoints

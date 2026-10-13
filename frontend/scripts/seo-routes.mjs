@@ -31,6 +31,7 @@ export const ROUTES = [
   { path: "/dashboard/projects", index: false, prerender: false },
   { path: "/dashboard/tasks", index: false, prerender: false },
   { path: "/dashboard/bulk-messages", index: false, prerender: false },
+  { path: "/dashboard/gallery", index: false, prerender: false },
 ];
 
 /** Every path declared in the app, including the catch-all used for drift checking. */

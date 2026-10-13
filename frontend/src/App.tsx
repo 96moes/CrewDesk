@@ -23,6 +23,7 @@ import UsersManage from "./pages/admin/UsersManage";
 import ProjectsManage from "./pages/admin/ProjectsManage";
 import TasksManage from "./pages/admin/TasksManage";
 import BulkMessages from "./pages/admin/BulkMessages";
+import MediaManage from "./pages/admin/MediaManage";
 import GroupsManage from "./pages/GroupsManage";
 
 export default function App() {
@@ -76,6 +77,7 @@ export default function App() {
               <Route path="projects" element={<ProjectsManage />} />
               <Route path="tasks" element={<TasksManage />} />
               <Route path="bulk-messages" element={<BulkMessages />} />
+              <Route path="gallery" element={<MediaManage />} />
             </Route>
 
             {/* Group leaders manage their own groups; no role restriction */}

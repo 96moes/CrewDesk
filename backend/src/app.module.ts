@@ -16,6 +16,8 @@ import { Group } from './groups/entities/group.entity';
 import { GroupMember } from './groups/entities/group-member.entity';
 import { BulkMessageRequest } from './groups/entities/bulk-message-request.entity';
 import { BulkMessage } from './groups/entities/bulk-message.entity';
+import { MediaModule } from './media/media.module';
+import { Media } from './media/entities/media.entity';
 
 @Module({
   imports: [
@@ -39,6 +41,7 @@ import { BulkMessage } from './groups/entities/bulk-message.entity';
           GroupMember,
           BulkMessageRequest,
           BulkMessage,
+          Media,
         ],
         autoLoadEntities: true,
         synchronize: true, // ⚠️ dev only
@@ -50,6 +53,7 @@ import { BulkMessage } from './groups/entities/bulk-message.entity';
     ProjectsModule,
     TasksModule,
     GroupsModule,
+    MediaModule,
   ],
 })
 export class AppModule {}
