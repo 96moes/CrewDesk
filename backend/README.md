@@ -120,6 +120,20 @@ expressed through groups instead:
 | Who manages a group | `groups."managerId"`, the single user who may change that group's members or submit a message for it. |
 | Who manages a project | `projects."managerId"`, unrelated to group management. |
 
+An account is four fields, and two of them are shared with nobody:
+
+| Field | Notes |
+| --- | --- |
+| `username` | Unique. The login, and the identifier the panel shows first. |
+| `password` | Hashed with bcrypt; never returned by any endpoint. |
+| `fullName` | The person's name. Whatever shows an account to a human prefers it to the username. |
+| `phone` | Unique. It is how a group manager finds an account to add and how a group message reaches it, so it is stored trimmed and cleared as `NULL` — a unique index tolerates many NULLs but only one empty string. |
+
+Both unique fields are checked before the row is written, so a duplicate answers **409** with
+`نام کاربری قبلاً استفاده شده است` or `این شماره تلفن قبلاً ثبت شده است` rather than surfacing the
+database's constraint violation as a 500. The account form in the panel requires name and phone
+when an account is created, and sends `null` when either box is emptied while editing.
+
 Membership is written only through the group endpoints (`POST`/`DELETE /groups/:id/members`), which
 is why `groupIds` is read-only in the user DTOs. Adding a member to a group changes the group and
 that user's `groupIds` in the same request.

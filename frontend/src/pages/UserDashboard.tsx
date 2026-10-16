@@ -12,6 +12,7 @@ import {
 } from "react-icons/fa";
 import { useAuthStore } from "../stores/authStore";
 import { canManageContent, canManageUsers } from "../lib/roles";
+import { ROLE_LABELS } from "../lib/roleMeta";
 import { getMyProfile, type ProfileResponse } from "../api/users";
 import { getMyProjects, type Project } from "../api/projects";
 import { getMyTasks, type Task, type TaskStatus } from "../api/tasks";
@@ -24,12 +25,6 @@ import { getMyGroups, type ManagedGroup } from "../api/groups";
  * from layouts/UserLayout.tsx, which wraps this route — so the layout decides what a visitor
  * may navigate to, and this file never has to know their role for that purpose.
  */
-
-const ROLE_LABELS: Record<string, string> = {
-    USER: "کاربر",
-    MANAGER: "سرپرست",
-    ADMIN: "مدیر",
-};
 
 const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
     todo: "در انتظار",
@@ -122,15 +117,15 @@ export default function UserDashboard() {
     const groupEntries =
         groups.length > 0
             ? groups.map((group) => ({
-                  id: group.id,
-                  name: group.name as string | null,
-                  isManager: group.managerId === profile?.id,
-              }))
+                id: group.id,
+                name: group.name as string | null,
+                isManager: group.managerId === profile?.id,
+            }))
             : (profile?.groupIds ?? []).map((id) => ({
-                  id,
-                  name: null as string | null,
-                  isManager: false,
-              }));
+                id,
+                name: null as string | null,
+                isManager: false,
+            }));
 
     return (
         <>
@@ -175,7 +170,7 @@ export default function UserDashboard() {
                         <div className="flex justify-between">
                             <dt className="text-gray-500">نقش</dt>
                             <dd className="font-medium text-gray-800">
-                                {ROLE_LABELS[profile?.role ?? ""] ?? profile?.role}
+                                {profile ? ROLE_LABELS[profile.role] : "—"}
                             </dd>
                         </div>
                     </dl>
@@ -201,11 +196,10 @@ export default function UserDashboard() {
                                             {entry.name ?? "گروه"}
                                         </span>
                                         <span
-                                            className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                                                entry.isManager
+                                            className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${entry.isManager
                                                     ? "bg-primary-100 text-primary-800"
                                                     : "bg-gray-100 text-gray-600"
-                                            }`}
+                                                }`}
                                         >
                                             {entry.isManager ? "مدیر گروه" : "عضو"}
                                         </span>
@@ -337,7 +331,7 @@ export default function UserDashboard() {
                 wording only differs in what each of them may manage there. */}
             {canManageContent(profile?.role) && (
                 <div className="mt-6 rounded-xl border border-primary-200 bg-primary-50 p-5 text-sm text-primary-800">
-                    شما با نقش <b>{ROLE_LABELS[profile?.role ?? ""]}</b> وارد شده‌اید. برای
+                    شما با نقش <b>{profile && ROLE_LABELS[profile.role]}</b> وارد شده‌اید. برای
                     مدیریت{" "}
                     {canManageUsers(profile?.role)
                         ? "کاربران، پروژه‌ها و وظایف"

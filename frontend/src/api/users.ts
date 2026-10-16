@@ -25,8 +25,12 @@ export interface UpdateUserPayload {
   username?: string;
   password?: string;
   role?: UserRole;
-  fullName?: string;
-  phone?: string;
+  /**
+   * null clears the field. An empty string would do something else entirely: `phone` is unique,
+   * so a second account with "" would collide, whereas two NULLs are perfectly legal.
+   */
+  fullName?: string | null;
+  phone?: string | null;
 }
 
 // ---------- Self ----------

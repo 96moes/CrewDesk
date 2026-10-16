@@ -38,11 +38,23 @@ export class User {
   role!: UserRole;
 
   // -------- Profile fields --------
-  @Column({ nullable: true })
-  fullName?: string;
+  //
+  // Both column types are spelled out, and they have to be: TypeORM reads the property's
+  // reflected type, and a nullable union (`string | null`) reflects as `Object`, which PostgreSQL
+  // cannot take — the app refuses to start with a DataTypeNotSupportedError. Every other nullable
+  // column in this codebase carries an explicit type for the same reason. `varchar` is exactly
+  // what the reflected `String` used to produce, so the generated DDL does not change.
 
-  @Column({ nullable: true, unique: true })
-  phone?: string;
+  @Column({ type: 'varchar', nullable: true })
+  fullName?: string | null;
+
+  /**
+   * The account's phone number — unique, because it is how one account is told from another when
+   * a group manager adds a member or a group message is addressed. Cleared as NULL, never as an
+   * empty string: a unique index tolerates any number of NULLs and only one "".
+   */
+  @Column({ type: 'varchar', nullable: true, unique: true })
+  phone?: string | null;
 
   /**
    * The groups this user belongs to, as membership rows.

@@ -58,7 +58,10 @@ export class GroupsService {
 
   async create(userId: string, dto: CreateGroupDto) {
     const group = await this.groupsRepository.save(
-      this.groupsRepository.create({ name: dto.name.trim(), managerId: userId }),
+      this.groupsRepository.create({
+        name: dto.name.trim(),
+        managerId: userId,
+      }),
     );
     return this.toGroupResponse(await this.getOwnedGroup(userId, group.id));
   }
@@ -194,7 +197,9 @@ export class GroupsService {
     });
     if (!group) throw new NotFoundException('گروه پیدا نشد');
     if (group.members.length === 0) {
-      throw new BadRequestException('برای ارسال پیام، گروه باید عضو داشته باشد');
+      throw new BadRequestException(
+        'برای ارسال پیام، گروه باید عضو داشته باشد',
+      );
     }
     const membersWithoutPhone = group.members.filter(
       (membership) => !membership.user.phone?.trim(),
@@ -219,7 +224,9 @@ export class GroupsService {
       const messages = group.members.map((membership) =>
         manager.create(BulkMessage, {
           requestId: request.id,
-          phone: membership.user.phone!.trim(),
+          // Every member has a number by now — the check above rejects the request otherwise —
+          // so the fallback only keeps the nullable column honest.
+          phone: membership.user.phone?.trim() ?? '',
           content: content.trim(),
         }),
       );

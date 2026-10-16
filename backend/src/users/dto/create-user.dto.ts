@@ -3,7 +3,7 @@ import {
   IsString,
   IsEnum,
   IsOptional,
-  IsPhoneNumber,
+  MaxLength,
   MinLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -26,10 +26,18 @@ export class CreateUserDto {
   @ApiPropertyOptional({ example: 'علی رضایی' })
   @IsOptional()
   @IsString()
-  fullName?: string;
+  @MaxLength(100)
+  fullName?: string | null;
 
+  /**
+   * The account's phone number, and the only one that may hold it: the column is unique, so this
+   * is how an account is found when it is added to a group and how a group message reaches it.
+   * `null` clears it — the update path sends that when the box is emptied, because the unique
+   * index tolerates any number of NULLs but would reject a second empty string.
+   */
   @ApiPropertyOptional({ example: '09123456789' })
   @IsOptional()
   @IsString()
-  phone?: string;
+  @MaxLength(20)
+  phone?: string | null;
 }
