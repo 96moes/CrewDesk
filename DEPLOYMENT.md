@@ -53,7 +53,8 @@ Bundled with this guide, ready to copy to the server:
                     │  crewdesk.example  │
                     └───┬────────────┬───┘
        / , /dashboard...│            │ /auth /users /projects /tasks
-       /assets/*        │            │ /groups /social-links /docs
+       /assets/*        │            │ /groups /social-links /media
+                        │            │ /opportunities /docs
                         ▼            ▼
         /var/www/crewdesk     127.0.0.1:3000
         (Vite build output)   systemd: crewdesk-api (NestJS)
@@ -636,7 +637,7 @@ sudo systemctl reload nginx
 | `/`, `/about`, `/dashboard/users` | `try_files $uri $uri/index.html $uri/ /index.html` | Prerendered pages are real files and win; otherwise React Router owns client-side routes, so deep links and refreshes must not 404. |
 | `/assets/*` | static, `Cache-Control: immutable` | Vite emits content-hashed filenames, so a year of caching is safe. |
 | `/index.html` | static, `no-store` | The HTML shell references the hashed bundles; caching it would pin users to an old release. |
-| `/auth/…`, `/users/…`, `/projects/…`, `/tasks/…`, `/groups/…`, `/social-links/…` | proxied to `127.0.0.1:3000` | The NestJS controllers use exactly these top-level paths and there is no global `/api` prefix. |
+| `/auth/…`, `/users/…`, `/projects/…`, `/tasks/…`, `/groups/…`, `/social-links/…`, `/media/…`, `/opportunities/…` | proxied to `127.0.0.1:3000` | The NestJS controllers use exactly these top-level paths and there is no global `/api` prefix. |
 | `/docs` | proxied to `127.0.0.1:3000` | Swagger UI. **Unprotected by the API** — see below. |
 
 Two details worth understanding, because they are the usual cause of "the API 404s on production
@@ -650,8 +651,9 @@ but works locally":
 
 > **Namespace note.** Because the API lives at the root of the same domain, these paths belong to
 > the API and cannot also be React Router pages: `/auth`, `/users`, `/projects`, `/tasks`,
-> `/groups`, `/social-links`, `/docs`. Current routes such as `/dashboard`, `/dashboard/users`,
-> `/about`, and `/gallery` are unaffected. If you later want a page called `/projects`, either
+> `/groups`, `/social-links`, `/media`, `/opportunities`, `/docs`. Current routes such as
+> `/dashboard`, `/dashboard/users`, `/about`, and `/gallery` are unaffected. If you later want a
+> page called `/projects`, either
 > move the backend to a global `/api` prefix (`app.setGlobalPrefix('api')` in
 > `backend/src/main.ts`, plus `VITE_API_BASE_URL` left empty and a single `location /api/` proxy)
 > or give the page a different path.

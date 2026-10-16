@@ -7,6 +7,7 @@ import {
     FaEnvelope,
     FaUsersCog,
     FaImages,
+    FaHandsHelping,
 } from "react-icons/fa";
 import type { PanelNavItem } from "../components/PanelShell";
 import type { UserRole } from "../api/auth";
@@ -63,6 +64,13 @@ const GALLERY: PanelNavItem = {
     icon: <FaImages />,
 };
 
+/** The cards behind the public «فرصت‌های همکاری» page. */
+const OPPORTUNITIES: PanelNavItem = {
+    to: "/dashboard/opportunities",
+    label: "فرصت‌های همکاری",
+    icon: <FaHandsHelping />,
+};
+
 /**
  * The pages administrators and managers both work in, in the order the panel shows them. This
  * list must mirror the routes wrapped in ManagementRoute in src/App.tsx.
@@ -73,6 +81,7 @@ const MANAGEMENT_PAGES: PanelNavItem[] = [
     TASKS,
     BULK_MESSAGES,
     GALLERY,
+    OPPORTUNITIES,
 ];
 
 /** The signed-in user's own dashboard — the landing page after login. */
@@ -102,7 +111,15 @@ const MY_PAGES: PanelNavItem[] = [MY_DASHBOARD, GROUPS];
  */
 function managementPages(role: UserRole | null): PanelNavItem[] {
     return canManageUsers(role)
-        ? [OVERVIEW, USERS_PAGE, PROJECTS, TASKS, BULK_MESSAGES, GALLERY]
+        ? [
+              OVERVIEW,
+              USERS_PAGE,
+              PROJECTS,
+              TASKS,
+              BULK_MESSAGES,
+              GALLERY,
+              OPPORTUNITIES,
+          ]
         : MANAGEMENT_PAGES;
 }
 

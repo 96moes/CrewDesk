@@ -18,6 +18,8 @@ import { BulkMessageRequest } from './groups/entities/bulk-message-request.entit
 import { BulkMessage } from './groups/entities/bulk-message.entity';
 import { MediaModule } from './media/media.module';
 import { Media } from './media/entities/media.entity';
+import { OpportunitiesModule } from './opportunities/opportunities.module';
+import { Opportunity } from './opportunities/entities/opportunity.entity';
 
 @Module({
   imports: [
@@ -42,6 +44,7 @@ import { Media } from './media/entities/media.entity';
           BulkMessageRequest,
           BulkMessage,
           Media,
+          Opportunity,
         ],
         autoLoadEntities: true,
         synchronize: true, // ⚠️ dev only
@@ -54,6 +57,7 @@ import { Media } from './media/entities/media.entity';
     TasksModule,
     GroupsModule,
     MediaModule,
+    OpportunitiesModule,
   ],
 })
 export class AppModule {}

@@ -38,6 +38,7 @@ CrewDesk/
 │   │   ├── auth/            JWT authentication and role guards
 │   │   ├── groups/          Groups and per-recipient bulk messages
 │   │   ├── media/           Gallery items (photos and video embeds)
+│   │   ├── opportunities/   Cooperation opportunities shown on the public cooperation page
 │   │   ├── projects/
 │   │   ├── social-links/
 │   │   ├── tasks/
@@ -109,7 +110,7 @@ On Windows PowerShell, copy the example files with `Copy-Item .env.example .env`
 
 Set a unique, strong `JWT_SECRET` and a non-default admin password outside local development. The
 development seed is created only if that username is not already present. The API has three roles:
-`ADMIN`, which may manage users, projects, tasks, media and the bulk-message queue; `MANAGER`, which
+`ADMIN`, which may manage users, projects, tasks, media, cooperation opportunities and the bulk-message queue; `MANAGER`, which
 may do all of that except manage users; and `USER`, which is every ordinary account and the default
 for accounts created through the API. User accounts are the one thing only an administrator can
 reach, so keep `ADMIN_ROLE=ADMIN` for the seeded account — it is the account that hands out the
@@ -180,7 +181,7 @@ The guide ships ready-to-use configuration templates in `deploy/templates/`:
 
 `deploy/scripts/create-og-image.py` regenerates the 1200×630 social preview image at `frontend/public/og-image.png`.
 
-The recommended production topology is a single origin: nginx serves the built frontend, proxies the API paths (`/auth`, `/users`, `/projects`, `/tasks`, `/groups`, `/social-links`, `/docs`) to the API on `127.0.0.1:3000`, and terminates TLS. That keeps the browser same-origin and leaves one public entry point.
+The recommended production topology is a single origin: nginx serves the built frontend, proxies the API paths (`/auth`, `/users`, `/projects`, `/tasks`, `/groups`, `/social-links`, `/media`, `/opportunities`, `/docs`) to the API on `127.0.0.1:3000`, and terminates TLS. That keeps the browser same-origin and leaves one public entry point.
 
 ## Search engine optimization
 

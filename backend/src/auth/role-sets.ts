@@ -2,8 +2,8 @@
 import { UserRole } from '../users/entities/user.entity';
 
 /**
- * Roles that may manage the site's content: projects, tasks, media, the social links, the
- * bulk-message queue and the dashboards behind them.
+ * Roles that may manage the site's content: projects, tasks, media, the cooperation
+ * opportunities, the social links, the bulk-message queue and the dashboards behind them.
  *
  * It exists so the one role difference in the API is written down once. Every controller that
  * guards a content-management route uses `@Roles(...MANAGEMENT_ROLES)`; user accounts are the

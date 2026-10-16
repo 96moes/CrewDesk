@@ -11,6 +11,7 @@ Public pages read from the API rather than from hardcoded arrays.
 | Page | Endpoint | Notes |
 | --- | --- | --- |
 | `/gallery` | `GET /media` | Admin-managed photos and video embeds |
+| `/cooperation` | `GET /opportunities` | Admin-managed cooperation opportunities |
 | Footer social icons | `GET /social-links` | |
 
 `/gallery` was previously a hardcoded list of placeholder images and two identical YouTube videos.
@@ -29,6 +30,13 @@ Video players come from `embedUrl`, which the **API** derives from the URL an ad
 [Gallery in the backend README](../backend/README.md#gallery-media). The frontend never builds a
 player URL itself, so the two can never disagree about what is embeddable.
 
+`/cooperation` works the same way: the cards used to be a `const OPPORTUNITIES` array inside
+`pages/Cooperation.tsx`, and they are now rows behind `GET /opportunities` with the same three
+non-happy states. Each card's button uses the opportunity's own label and destination; when an
+opportunity has no destination, the button leads to `/register`, which is the one in-app way to
+offer help. Content is managed at `/dashboard/opportunities`
+(`pages/admin/OpportunitiesManage.tsx`), which also keeps its own state.
+
 ## Layouts
 
 There are three sections and each has exactly one layout. Two of them are signed in and share the
@@ -36,25 +44,35 @@ same frame; the public pages use the site shell.
 
 | Section | Routes | Layout |
 | --- | --- | --- |
-| Public — anyone | `/`, `/about`, `/gallery`, `/education`, `/cooperation`, `/donations`, `/events`, `/login`, `/register`, `*` | `layouts/MainLayout.tsx` — top navigation and footer |
+| Public — anyone | `/`, `/about`, `/gallery`, `/education`, `/cooperation`, `/donations`, `/events`, `/login`, `/register`, `*` | `layouts/MainLayout.tsx` — top bar, page, footer |
 | Signed-in user — any account | `/dashboard/user`, `/dashboard/groups` | `layouts/UserLayout.tsx` — panel shell |
-| Management panel — `ADMIN` and `MANAGER` | `/dashboard`, `/dashboard/projects`, `/dashboard/tasks`, `/dashboard/bulk-messages`, `/dashboard/gallery`, plus `/dashboard/users` for `ADMIN` alone | `layouts/AdminLayout.tsx` — panel shell |
+| Management panel — `ADMIN` and `MANAGER` | `/dashboard`, `/dashboard/projects`, `/dashboard/tasks`, `/dashboard/bulk-messages`, `/dashboard/gallery`, `/dashboard/opportunities`, plus `/dashboard/users` for `ADMIN` alone | `layouts/AdminLayout.tsx` — panel shell |
 
 The signed-in routes sit **outside** `MainLayout` in `src/App.tsx`. That is intentional: the public
 header and footer are site navigation, and inside a signed-in area they compete with the panel
 navigation, wrap the tables in a max-width column, and offer links back out to the public pages.
 
-Both signed-in layouts render `components/PanelShell.tsx`, so the bar, the navigation and the
-full-width content column are identical everywhere; only the navigation items and the panel title
-differ, and the layout passes those in. The bar is the public site's bar — sticky and blurred, the
-brand mark and panel name on one side, the links as underlined labels (`lg` and up) that collapse
-into the same hamburger menu the public header opens below that width, and "view site" plus logout
-on the other. Navigation sits along the top so the content keeps the full width; there is no
-sidebar. The items themselves are defined once, in `layouts/sectionNav.tsx`:
+### One bar, one container, three shells
+
+The pieces the three sections are built from, and the rule each one owns:
+
+| Piece | What it decides |
+| --- | --- |
+| `components/TopBar.tsx` | The bar itself, used by both the public header and the panel: the brand block, the links as underlined labels from `xl` up and in a hamburger menu below it, the menu's behaviour (it closes on a link, on the brand, on Escape, on a click outside, and on any navigation), the skip link, and the shadow that appears once the page scrolls under it. |
+| `components/Container.tsx` | The horizontal rhythm: `page` for the public site's centred `max-w-6xl` column, `screen` for a panel that uses the viewport. The bar, the page and the footer all use it, so they line up. |
+| `components/Header.tsx` | The public bar: its links (`layouts/publicNav.ts`, shared with the footer) and the account area — a login link for a visitor, a way into the panel for everyone else. |
+| `components/Footer.tsx` | The public footer: who the site is, the same link list, how to follow it, and the copyright bar. |
+| `components/PanelShell.tsx` | The signed-in frame: the same bar with the panel's title, links and "view site"/logout actions, over a full-width `<main>`. |
+| `components/ScrollToTop.tsx` | Rendered once in `App.tsx`: every navigation starts at the top instead of wherever the last page was scrolled to. |
+
+Both signed-in layouts render `PanelShell`, so the bar and the navigation are identical everywhere;
+only the panel's name, its links and where its brand leads differ, and the layout passes those in.
+Navigation sits along the top so the content keeps the full width; there is no sidebar. The items
+themselves are defined once, in `layouts/sectionNav.tsx`:
 
 | Section and role | Navigation | Title |
 | --- | --- | --- |
-| Management panel, `ADMIN` | overview, users, projects, tasks, message queue, gallery, groups | داشبورد مدیریتی |
+| Management panel, `ADMIN` | overview, users, projects, tasks, message queue, gallery, cooperation opportunities, groups | داشبورد مدیریتی |
 | Management panel, `MANAGER` | the same without users | داشبورد مدیریتی |
 | User area, signed in as `ADMIN` or `MANAGER` | my dashboard, groups, then the management pages above | داشبورد من |
 | User area, `USER` | my dashboard, groups | داشبورد من |
@@ -64,6 +82,10 @@ the same links except the user page, which only an administrator is offered, and
 any of them. The rule lives in one place, `src/lib/roles.ts` — `canManageContent` for the pages both
 roles run and `canManageUsers` for the administrator-only one. A page renders its content only — it
 never renders `PanelShell` itself.
+
+Titles, spacing and the current-page marker are decided by those components, not by the pages: a
+page supplies its own heading and cards inside `<main id="main">`, which is also what the bar's skip
+link jumps to.
 
 When adding a signed-in page, put it under the layout route of its section in `src/App.tsx`
 (`UserLayout` or `AdminLayout`) and add its link to `layouts/sectionNav.tsx`. Wrap it in

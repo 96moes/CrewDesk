@@ -43,7 +43,7 @@ roles, and the difference between them is written down once, in `src/auth/role-s
 | Role      | May do                                                                                                                        | Guarded by                    |
 | --------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
 | `USER`    | Everything a signed-in account may do: own dashboard, own projects and tasks, the groups it manages                           | no `@Roles` restriction       |
-| `MANAGER` | All of the above, plus projects, tasks, media, social links, the bulk-message queue and the user directory behind the pickers | `@Roles(...MANAGEMENT_ROLES)` |
+| `MANAGER` | All of the above, plus projects, tasks, media, cooperation opportunities, social links, the bulk-message queue and the user directory behind the pickers | `@Roles(...MANAGEMENT_ROLES)` |
 | `ADMIN`   | All of the above, plus user accounts: list, read, create, update and delete                                                   | `@Roles(UserRole.ADMIN)`      |
 
 `USER` is the default for anything created through the API. User accounts are the whole of the
@@ -88,6 +88,26 @@ so the gallery cannot end up showing a dead player. Normalising on the server al
 `published: false` hides an item from `GET /media` — the filter is applied in SQL, so a draft cannot
 leak to an anonymous visitor. `linkUrl`, when set, makes the gallery render the item as a link
 instead of an inline figure or player.
+
+## Cooperation opportunities (`/opportunities`)
+
+The cards on the public «فرصت‌های همکاری» page come from this module; they were a hardcoded array in
+`frontend/src/pages/Cooperation.tsx` before.
+
+| Method   | Route                      | Access             | Purpose                                                    |
+| -------- | -------------------------- | ------------------ | ---------------------------------------------------------- |
+| `GET`    | `/opportunities`           | public             | Published items only, ordered by `sortOrder` then oldest   |
+| `GET`    | `/opportunities/admin/all` | `ADMIN`, `MANAGER` | Every item, including unpublished drafts                   |
+| `GET`    | `/opportunities/:id`       | `ADMIN`, `MANAGER` | A single item                                              |
+| `POST`   | `/opportunities`           | `ADMIN`, `MANAGER` | Create                                                     |
+| `PATCH`  | `/opportunities/:id`       | `ADMIN`, `MANAGER` | Update                                                     |
+| `DELETE` | `/opportunities/:id`       | `ADMIN`, `MANAGER` | Delete                                                     |
+
+An opportunity is a `title`, an optional `description`, and an optional call to action:
+`actionLabel` is the button text (the page falls back to «درخواست همکاری») and `actionUrl` is where
+it points (empty means the page sends the visitor to the sign-up form). `sortOrder` places the
+cards, and `published: false` hides one from `GET /opportunities` — that filter is applied in SQL,
+so a draft cannot leak to an anonymous visitor.
 
 ## Development and production
 

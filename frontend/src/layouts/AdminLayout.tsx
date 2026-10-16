@@ -7,8 +7,9 @@ import { canManageContent } from "../lib/roles";
 /**
  * Layout for the management panel: /dashboard and its child pages.
  *
- * The frame comes from PanelShell, which UserLayout renders too, so both signed-in areas look
- * identical; only the navigation differs. See src/App.tsx for the three sections.
+ * The frame comes from components/PanelShell.tsx, which UserLayout renders too: both signed-in areas
+ * are the same top bar (components/TopBar.tsx) as the public site, with their own links. See
+ * src/App.tsx for the three sections.
  *
  * The panel is not wrapped in a guard as a whole — ManagementRoute and AdminRoute are applied per
  * page inside it. This layout therefore also renders briefly for a signed-in user without a

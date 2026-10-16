@@ -88,9 +88,6 @@ export function SocialIcons({
         fetchLinks();
     }, [fetchLinks]);
 
-    // 🔎 Debug — remove once things work
-    console.log("[SocialIcons]", { links, loading, error });
-
     const visible = includeAdmin
         ? links
         : links.filter((l) => !l.platform.startsWith("admin"));

@@ -46,6 +46,7 @@ export const PRIVATE_PATHS = [
   "/dashboard/tasks",
   "/dashboard/bulk-messages",
   "/dashboard/gallery",
+  "/dashboard/opportunities",
 ];
 
 /** Every path declared in the app, including the catch-all used for drift checking. */

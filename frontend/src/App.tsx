@@ -9,6 +9,7 @@ import AdminLayout from "./layouts/AdminLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 import ManagementRoute from "./components/ManagementRoute";
+import ScrollToTop from "./components/ScrollToTop";
 import SeoRoute from "./seo/SeoRoute";
 
 /*
@@ -35,6 +36,9 @@ const ProjectsManage = lazy(() => import("./pages/admin/ProjectsManage"));
 const TasksManage = lazy(() => import("./pages/admin/TasksManage"));
 const BulkMessages = lazy(() => import("./pages/admin/BulkMessages"));
 const MediaManage = lazy(() => import("./pages/admin/MediaManage"));
+const OpportunitiesManage = lazy(
+  () => import("./pages/admin/OpportunitiesManage"),
+);
 
 /** Placeholder shown while a page chunk is in flight. */
 function PageFallback() {
@@ -56,6 +60,9 @@ export default function App() {
     <>
       {/* Route-level <title>, description, canonical and robots tags. */}
       <SeoRoute />
+
+      {/* Every navigation starts at the top, in all three sections. */}
+      <ScrollToTop />
 
       <Routes>
         {/*
@@ -110,6 +117,7 @@ export default function App() {
               <Route path="tasks" element={page(<TasksManage />)} />
               <Route path="bulk-messages" element={page(<BulkMessages />)} />
               <Route path="gallery" element={page(<MediaManage />)} />
+              <Route path="opportunities" element={page(<OpportunitiesManage />)} />
             </Route>
 
             {/* User accounts: administrators only — the one page a manager may not open. */}
