@@ -1,9 +1,11 @@
 // src/pages/admin/Overview.tsx
 import { useEffect } from "react";
 import { Link } from "react-router";
+import { useAuthStore } from "../../stores/authStore";
 import { useUsersAdminStore } from "../../stores/usersAdminStore";
 import { useProjectsStore } from "../../stores/projectsStore";
 import { useTasksStore } from "../../stores/tasksStore";
+import { canManageUsers } from "../../lib/roles";
 import {
     FaUsers,
     FaProjectDiagram,
@@ -11,7 +13,17 @@ import {
     FaCheckCircle,
 } from "react-icons/fa";
 
+/**
+ * The panel overview.
+ *
+ * The account count and its link are administrator-only, like the page behind them: a manager
+ * neither sees the card nor requests the user list, which the API would refuse. The remaining
+ * cards are the same for both roles.
+ */
 export default function Overview() {
+    const role = useAuthStore((s) => s.role);
+    const canSeeUsers = canManageUsers(role);
+
     const users = useUsersAdminStore((s) => s.users);
     const usersLoaded = useUsersAdminStore((s) => s.loaded);
     const fetchUsers = useUsersAdminStore((s) => s.fetch);
@@ -25,10 +37,11 @@ export default function Overview() {
     const fetchTasks = useTasksStore((s) => s.fetch);
 
     useEffect(() => {
-        if (!usersLoaded) fetchUsers();
+        if (canSeeUsers && !usersLoaded) fetchUsers();
         if (!projectsLoaded) fetchProjects();
         if (!tasksLoaded) fetchTasks();
     }, [
+        canSeeUsers,
         usersLoaded,
         projectsLoaded,
         tasksLoaded,
@@ -40,12 +53,16 @@ export default function Overview() {
     const doneTasks = tasks.filter((t) => t.status === "done").length;
 
     const cards = [
-        {
-            label: "کاربران",
-            value: users.length,
-            to: "/dashboard/users",
-            icon: <FaUsers />,
-        },
+        ...(canSeeUsers
+            ? [
+                  {
+                      label: "کاربران",
+                      value: users.length,
+                      to: "/dashboard/users",
+                      icon: <FaUsers />,
+                  },
+              ]
+            : []),
         {
             label: "پروژه‌ها",
             value: projects.length,

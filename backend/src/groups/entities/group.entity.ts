@@ -18,12 +18,13 @@ export class Group {
   @Column()
   name!: string;
 
+  /** The user who manages this group: only they may change its members or post for it. */
   @Column({ type: 'uuid' })
-  leaderId!: string;
+  managerId!: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'leaderId' })
-  leader!: User;
+  @JoinColumn({ name: 'managerId' })
+  manager!: User;
 
   @OneToMany(() => GroupMember, (member) => member.group)
   members!: GroupMember[];

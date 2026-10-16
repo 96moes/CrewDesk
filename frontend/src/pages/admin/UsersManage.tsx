@@ -1,5 +1,5 @@
 // src/pages/admin/UsersManage.tsx
-import { useEffect, useState, type SyntheticEvent } from "react";
+import { useEffect, useState, type ReactNode, type SyntheticEvent } from "react";
 import { useUsersAdminStore } from "../../stores/usersAdminStore";
 import Modal from "../../components/Modal";
 import {
@@ -7,19 +7,31 @@ import {
     FaEdit,
     FaTrash,
     FaUserShield,
+    FaUserTie,
 } from "react-icons/fa";
 import type { AdminUser, UserRole } from "../../api/users";
 
+/**
+ * User accounts — the one panel page a manager may not open (components/AdminRoute.tsx).
+ *
+ * Adding a role here means adding it to UserRole in src/api/auth.ts and to MANAGEMENT_ROLES in
+ * backend/src/auth/role-sets.ts if it should manage site content.
+ */
 const ROLE_LABELS: Record<UserRole, string> = {
     ADMIN: "مدیر",
-    REGISTRAR: "ثبت‌کننده",
-    REPORT_VIEWER: "بیننده گزارش",
+    MANAGER: "سرپرست",
+    USER: "کاربر",
 };
 
 const ROLE_BADGES: Record<UserRole, string> = {
     ADMIN: "bg-primary-100 text-primary-800",
-    REGISTRAR: "bg-warning-50 text-warning-700",
-    REPORT_VIEWER: "bg-success-50 text-success-700",
+    MANAGER: "bg-warning-50 text-warning-700",
+    USER: "bg-success-50 text-success-700",
+};
+
+const ROLE_ICONS: Partial<Record<UserRole, ReactNode>> = {
+    ADMIN: <FaUserShield size={10} />,
+    MANAGER: <FaUserTie size={10} />,
 };
 
 interface FormState {
@@ -28,7 +40,7 @@ interface FormState {
     role: UserRole;
 }
 
-const EMPTY: FormState = { username: "", password: "", role: "REGISTRAR" };
+const EMPTY: FormState = { username: "", password: "", role: "USER" };
 
 export default function UsersManage() {
     const { users, loading, error, fetch, add, edit, remove } =
@@ -131,6 +143,7 @@ export default function UsersManage() {
                             <tr>
                                 <th className="p-3 font-medium">نام کاربری</th>
                                 <th className="p-3 font-medium">نقش</th>
+                                <th className="p-3 font-medium">گروه‌ها</th>
                                 <th className="p-3 font-medium">شناسه</th>
                                 <th className="p-3 font-medium">عملیات</th>
                             </tr>
@@ -138,14 +151,14 @@ export default function UsersManage() {
                         <tbody className="divide-y divide-primary-50">
                             {loading && users.length === 0 && (
                                 <tr>
-                                    <td colSpan={4} className="p-6 text-center text-gray-500">
+                                    <td colSpan={5} className="p-6 text-center text-gray-500">
                                         در حال بارگذاری…
                                     </td>
                                 </tr>
                             )}
                             {!loading && users.length === 0 && (
                                 <tr>
-                                    <td colSpan={4} className="p-6 text-center text-gray-500">
+                                    <td colSpan={5} className="p-6 text-center text-gray-500">
                                         کاربری یافت نشد.
                                     </td>
                                 </tr>
@@ -157,9 +170,29 @@ export default function UsersManage() {
                                         <span
                                             className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${ROLE_BADGES[u.role]}`}
                                         >
-                                            {u.role === "ADMIN" && <FaUserShield size={10} />}
+                                            {ROLE_ICONS[u.role]}
                                             {ROLE_LABELS[u.role]}
                                         </span>
+                                    </td>
+                                    <td className="p-3">
+                                        {/* Ids of the groups this user is in. Membership lives in
+                                            group_members, so this is read-only here. */}
+                                        {u.groupIds.length === 0 ? (
+                                            <span className="text-xs text-gray-400">—</span>
+                                        ) : (
+                                            <div className="flex flex-wrap gap-1">
+                                                {u.groupIds.map((groupId) => (
+                                                    <span
+                                                        key={groupId}
+                                                        title={groupId}
+                                                        dir="ltr"
+                                                        className="rounded bg-primary-50 px-1.5 py-0.5 font-mono text-[11px] text-primary-800"
+                                                    >
+                                                        {groupId.slice(0, 8)}…
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
                                     </td>
                                     <td className="p-3 font-mono text-xs text-gray-500">
                                         {u.id.slice(0, 8)}…

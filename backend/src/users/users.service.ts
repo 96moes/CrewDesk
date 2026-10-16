@@ -13,6 +13,22 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { Project } from '../projects/entities/project.entity';
 import { Task } from '../tasks/entities/task.entity';
 
+/**
+ * What every user endpoint returns: the account fields, never the password, plus the ids of the
+ * groups the user belongs to. The membership rows themselves stay on the server.
+ */
+export type UserResponse = Omit<User, 'password' | 'memberships'> & {
+  groupIds: string[];
+};
+
+/**
+ * The id/username pair behind every user picker (project manager, task assignee).
+ *
+ * Deliberately narrower than UserResponse: it is the one user listing a MANAGER may read, so it
+ * carries nothing but what an account is called. See UsersController.findDirectory.
+ */
+export type UserDirectoryEntry = Pick<User, 'id' | 'username'>;
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -26,7 +42,7 @@ export class UsersService {
     private tasksRepository: Repository<Task>,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<Omit<User, 'password'>> {
+  async create(createUserDto: CreateUserDto): Promise<UserResponse> {
     const existingUser = await this.usersRepository.findOne({
       where: { username: createUserDto.username },
     });
@@ -43,43 +59,45 @@ export class UsersService {
     });
 
     const saved = await this.usersRepository.save(user);
-    const { password, ...result } = saved;
-    return result;
+    return this.toUserResponse(saved);
   }
 
-  async findAll(): Promise<Omit<User, 'password'>[]> {
+  async findAll(): Promise<UserResponse[]> {
     const users = await this.usersRepository.find({
-      relations: { manager: true },
+      relations: { memberships: true },
     });
-    return users.map((u) => {
-      const { password, manager, ...rest } = u;
-      return {
-        ...rest,
-        manager: manager
-          ? { id: manager.id, username: manager.username }
-          : null,
-      } as any;
+    return users.map((user) => this.toUserResponse(user));
+  }
+
+  /**
+   * Every account as an id/username pair, for the pickers on the project and task pages.
+   *
+   * No relations and no other columns: see UserDirectoryEntry.
+   */
+  async findDirectory(): Promise<UserDirectoryEntry[]> {
+    return this.usersRepository.find({
+      select: { id: true, username: true },
+      order: { username: 'ASC' },
     });
   }
 
-  async findOne(id: string): Promise<Omit<User, 'password'>> {
+  async findOne(id: string): Promise<UserResponse> {
     const user = await this.usersRepository.findOne({
       where: { id },
-      relations: { manager: true },
+      relations: { memberships: true },
     });
     if (!user) throw new NotFoundException(`User with ID ${id} not found`);
-    const { password, manager, ...rest } = user;
-    return {
-      ...rest,
-      manager: manager ? { id: manager.id, username: manager.username } : null,
-    } as any;
+    return this.toUserResponse(user);
   }
 
   async update(
     id: string,
     updateUserDto: UpdateUserDto,
-  ): Promise<Omit<User, 'password'>> {
-    const user = await this.usersRepository.findOne({ where: { id } });
+  ): Promise<UserResponse> {
+    const user = await this.usersRepository.findOne({
+      where: { id },
+      relations: { memberships: true },
+    });
     if (!user) throw new NotFoundException(`User with ID ${id} not found`);
 
     if (updateUserDto.password) {
@@ -91,8 +109,7 @@ export class UsersService {
       ...user,
       ...updateUserDto,
     });
-    const { password, ...result } = updatedUser;
-    return result;
+    return this.toUserResponse(updatedUser);
   }
 
   async remove(id: string): Promise<{ success: boolean }> {
@@ -105,15 +122,29 @@ export class UsersService {
 
   // ---------- Dashboard helpers ----------
 
-  /** User profile with manager info */
-  async getProfile(id: string) {
+  /** User profile: the account fields plus the ids of the groups they belong to. */
+  async getProfile(id: string): Promise<UserResponse> {
     const user = await this.usersRepository.findOne({
       where: { id },
-      relations: { manager: true },
+      relations: { memberships: true },
     });
     if (!user) throw new NotFoundException('User not found');
-    const { password, ...rest } = user;
-    return rest;
+    return this.toUserResponse(user);
+  }
+
+  /**
+   * The API shape of a user.
+   *
+   * The password never leaves the server, and the group memberships are reduced to the ids the
+   * client actually uses. This is the one place that decides that shape, so every endpoint
+   * returns the same fields.
+   */
+  private toUserResponse(user: User): UserResponse {
+    const { password, memberships, ...rest } = user;
+    return {
+      ...rest,
+      groupIds: (memberships ?? []).map((membership) => membership.groupId),
+    };
   }
 
   /** Projects where the user is manager OR has at least one task */

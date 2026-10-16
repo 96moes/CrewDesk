@@ -2,8 +2,9 @@
 import { useState } from "react";
 import { NavLink, Link, useNavigate } from "react-router";
 import { HiMenu, HiX } from "react-icons/hi";
-import { FaUserCircle, FaUserShield } from "react-icons/fa";
+import { FaUserCircle, FaUserShield, FaUserTie } from "react-icons/fa";
 import { useAuthStore } from "../stores/authStore";
+import { canManageContent, canManageUsers } from "../lib/roles";
 
 interface NavItem {
     to: string;
@@ -58,7 +59,26 @@ export default function Header() {
                 : "text-gray-700 hover:bg-primary-50 hover:text-primary-700",
         ].join(" ");
 
-    const dashboardTo = role === "ADMIN" ? "/dashboard" : "/dashboard/user";
+    /**
+     * The single panel link: administrators and managers open the management panel, everyone
+     * else (group managers) the group page. The icon and title name the role so the link is not
+     * the only clue about which panel is behind it.
+     */
+    const isAdmin = canManageUsers(role);
+    const isManagement = canManageContent(role);
+    const dashboardTo = isManagement ? "/dashboard" : "/dashboard/user";
+    const dashboardTitle = isAdmin
+        ? "داشبورد مدیریتی"
+        : isManagement
+          ? "داشبورد مدیریت"
+          : "گروه‌های من";
+    const dashboardIcon = isAdmin ? (
+        <FaUserShield size={16} />
+    ) : isManagement ? (
+        <FaUserTie size={16} />
+    ) : (
+        <FaUserCircle size={16} />
+    );
     const dashboardLabel = user?.username ?? "داشبورد من";
 
     return (
@@ -97,18 +117,12 @@ export default function Header() {
                 <div className="hidden items-center gap-2 md:flex">
                     {token ? (
                         <>
-                            {/* Single panel link — admins land on the dashboard, other
-                                signed-in users (group leaders) on the group page. */}
                             <Link
                                 to={dashboardTo}
                                 className="flex items-center gap-2 rounded-xl bg-primary-50 px-3 py-2 text-sm font-medium text-primary-800 ring-1 ring-primary-100 transition-all duration-200 hover:bg-primary-100 hover:ring-primary-200"
-                                title={role === "ADMIN" ? "داشبورد مدیریتی" : "گروه‌های من"}
+                                title={dashboardTitle}
                             >
-                                {role === "ADMIN" ? (
-                                    <FaUserShield size={16} />
-                                ) : (
-                                    <FaUserCircle size={16} />
-                                )}
+                                {dashboardIcon}
                                 <span className="max-w-28 truncate">{dashboardLabel}</span>
                             </Link>
 
@@ -166,11 +180,7 @@ export default function Header() {
                                         onClick={() => setOpen(false)}
                                         className="flex items-center gap-2 rounded-xl bg-primary-50 px-4 py-3 text-sm font-medium text-primary-800"
                                     >
-                                        {role === "ADMIN" ? (
-                                            <FaUserShield size={16} />
-                                        ) : (
-                                            <FaUserCircle size={16} />
-                                        )}
+                                        {dashboardIcon}
                                         {dashboardLabel}
                                     </Link>
 

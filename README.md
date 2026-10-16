@@ -1,6 +1,6 @@
 # CrewDesk
 
-CrewDesk is a web application for managing projects, tasks, users, groups, and group message delivery. Group leaders can maintain member lists and submit a message for each member; administrators use a copy-and-paste queue to track delivery. The public site also serves an administrator-managed photo and video gallery.
+CrewDesk is a web application for managing projects, tasks, users, groups, and group message delivery. Group managers can maintain member lists — adding an account by name or by its registered phone number — and submit a message for each member; administrators use a copy-and-paste queue to track delivery. The public site also serves an administrator-managed photo and video gallery.
 
 ## Contents
 
@@ -105,9 +105,15 @@ On Windows PowerShell, copy the example files with `Copy-Item .env.example .env`
 | `SEED_ADMIN` | Seed an administrator during API startup when `true` | `true` |
 | `ADMIN_USERNAME` | Seeded administrator username | `admin` |
 | `ADMIN_PASSWORD` | Seeded administrator password | `admin` |
-| `ADMIN_ROLE` | Seeded administrator role | `ADMIN` |
+| `ADMIN_ROLE` | Role for the seeded account: `ADMIN`, `MANAGER` or `USER` | `ADMIN` |
 
-Set a unique, strong `JWT_SECRET` and a non-default admin password outside local development. The development seed is created only if that username is not already present. Roles supported by the API are `ADMIN`, `REGISTRAR`, and `REPORT_VIEWER`.
+Set a unique, strong `JWT_SECRET` and a non-default admin password outside local development. The
+development seed is created only if that username is not already present. The API has three roles:
+`ADMIN`, which may manage users, projects, tasks, media and the bulk-message queue; `MANAGER`, which
+may do all of that except manage users; and `USER`, which is every ordinary account and the default
+for accounts created through the API. User accounts are the one thing only an administrator can
+reach, so keep `ADMIN_ROLE=ADMIN` for the seeded account — it is the account that hands out the
+other roles.
 
 `SWAGGER_USER` and `SWAGGER_PASSWORD` are not active settings: the optional Swagger Basic Auth middleware is currently commented out. Swagger UI is available at `/docs` without that middleware.
 

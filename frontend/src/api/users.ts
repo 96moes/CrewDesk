@@ -9,8 +9,8 @@ export interface AdminUser {
   role: UserRole;
   fullName?: string | null;
   phone?: string | null;
-  managerId?: string | null;
-  manager?: { id: string; username: string } | null;
+  /** Ids of the groups this user belongs to. */
+  groupIds: string[];
 }
 
 export interface CreateUserPayload {
@@ -19,7 +19,6 @@ export interface CreateUserPayload {
   role: UserRole;
   fullName?: string;
   phone?: string;
-  managerId?: string;
 }
 
 export interface UpdateUserPayload {
@@ -28,7 +27,6 @@ export interface UpdateUserPayload {
   role?: UserRole;
   fullName?: string;
   phone?: string;
-  managerId?: string;
 }
 
 // ---------- Self ----------
@@ -38,8 +36,8 @@ export interface ProfileResponse {
   role: UserRole;
   fullName?: string | null;
   phone?: string | null;
-  managerId?: string | null;
-  manager?: { id: string; username: string } | null;
+  /** Ids of the groups this user belongs to. */
+  groupIds: string[];
 }
 
 export async function getMyProfile(): Promise<ProfileResponse> {
@@ -49,7 +47,26 @@ export async function getMyProfile(): Promise<ProfileResponse> {
 
 // (projects & tasks of current user live in their own api files)
 
-// ---------- Admin ----------
+// ---------- Management ----------
+
+/**
+ * An account as the project and task pickers see it: an id and a username, nothing else.
+ *
+ * It is the one user listing a MANAGER may read (see listUserDirectory), so it carries no
+ * account details — the fuller AdminUser above is behind the administrator-only endpoints.
+ */
+export interface UserDirectoryEntry {
+  id: string;
+  username: string;
+}
+
+/** Every account as an id/username pair, for the project and task pickers. */
+export async function listUserDirectory(): Promise<UserDirectoryEntry[]> {
+  const { data } = await api.get<UserDirectoryEntry[]>("/users/directory");
+  return data;
+}
+
+// ---------- Admin (administrator only) ----------
 export async function listUsers(): Promise<AdminUser[]> {
   const { data } = await api.get<AdminUser[]>("/users");
   return data;

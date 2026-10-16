@@ -5,15 +5,30 @@ import {
   createGroup,
   getMyGroups,
   removeGroupMember,
+  searchGroupMemberCandidates,
   submitGroupMessage,
+  type GroupMemberCandidate,
   type ManagedGroup,
 } from "../api/groups";
+
+/**
+ * How much of the query the search box needs before it asks the API. The API itself returns
+ * nothing below this length, so the two agree rather than the client guessing.
+ */
+const MIN_SEARCH_LENGTH = 3;
 
 export default function GroupsManage() {
   const user = useAuthStore((state) => state.user);
   const [groups, setGroups] = useState<ManagedGroup[]>([]);
   const [groupName, setGroupName] = useState("");
-  const [memberPhones, setMemberPhones] = useState<Record<string, string>>({});
+  const [memberQueries, setMemberQueries] = useState<Record<string, string>>({});
+  /**
+   * Search results per group. A group is absent until its manager has searched, which is how the
+   * page tells "no results" apart from "nothing searched yet".
+   */
+  const [memberMatches, setMemberMatches] = useState<
+    Record<string, GroupMemberCandidate[]>
+  >({});
   const [messageDrafts, setMessageDrafts] = useState<Record<string, string>>(
     {},
   );
@@ -59,16 +74,50 @@ export default function GroupsManage() {
     }
   };
 
-  const handleAddMember = async (event: FormEvent, groupId: string) => {
+  /**
+   * Look an account up by name or phone number.
+   *
+   * A name is not unique, so this only finds candidates; the manager adds one of them below.
+   */
+  const handleSearchMembers = async (event: FormEvent, groupId: string) => {
     event.preventDefault();
-    setBusy(`member-${groupId}`);
+    const query = (memberQueries[groupId] ?? "").trim();
+    if (query.length < MIN_SEARCH_LENGTH) {
+      setError(`برای جست‌وجو حداقل ${MIN_SEARCH_LENGTH} حرف وارد کنید.`);
+      setSuccess(null);
+      return;
+    }
+    setBusy(`search-${groupId}`);
     setError(null);
     try {
-      const group = await addGroupMember(groupId, memberPhones[groupId] ?? "");
+      const found = await searchGroupMemberCandidates(groupId, query);
+      setMemberMatches((current) => ({ ...current, [groupId]: found }));
+    } catch (err) {
+      showFailure(err, "خطا در جست‌وجوی کاربر");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const handleAddMember = async (
+    groupId: string,
+    candidate: GroupMemberCandidate,
+  ) => {
+    setBusy(`member-${candidate.id}`);
+    setError(null);
+    try {
+      const group = await addGroupMember(groupId, { userId: candidate.id });
       setGroups((current) =>
         current.map((item) => (item.id === group.id ? group : item)),
       );
-      setMemberPhones((current) => ({ ...current, [groupId]: "" }));
+      // Keep the result in place, now marked as a member: the manager sees what happened to the
+      // row they clicked instead of watching it vanish.
+      setMemberMatches((current) => ({
+        ...current,
+        [groupId]: (current[groupId] ?? []).map((item) =>
+          item.id === candidate.id ? { ...item, alreadyMember: true } : item,
+        ),
+      }));
       setSuccess("عضو به گروه اضافه شد.");
     } catch (err) {
       showFailure(err, "خطا در افزودن عضو");
@@ -116,7 +165,7 @@ export default function GroupsManage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-primary-800">گروه‌های من</h1>
         <p className="mt-1 text-sm text-gray-500">
-          گروه بسازید، اعضا را با شماره تلفن اضافه کنید و برای همه یک پیام ثبت کنید.
+          گروه بسازید، اعضا را با شماره تلفن یا نام اضافه کنید و برای همه یک پیام ثبت کنید.
         </p>
       </div>
 
@@ -159,17 +208,17 @@ export default function GroupsManage() {
       ) : (
         <div className="space-y-5">
           {groups.map((group) => {
-            const isLeader = group.leaderId === user?.id;
+            const isManager = group.managerId === user?.id;
             return (
               <section key={group.id} className="rounded-xl border border-primary-100 bg-white p-5">
                 <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <h2 className="text-lg font-bold text-primary-800">{group.name}</h2>
                     <p className="text-xs text-gray-500">
-                      مدیر: {group.leaderName} · {group.members.length} عضو
+                      مدیر گروه: {group.managerName} · {group.members.length} عضو
                     </p>
                   </div>
-                  {!isLeader && (
+                  {!isManager && (
                     <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600">عضو گروه</span>
                   )}
                 </div>
@@ -181,7 +230,7 @@ export default function GroupsManage() {
                         <span className="font-medium text-gray-800">{member.fullName || member.username}</span>
                         <span className="ms-2 font-mono text-xs text-gray-500" dir="ltr">{member.phone}</span>
                       </div>
-                      {isLeader && (
+                      {isManager && (
                         <button
                           type="button"
                           onClick={() => handleRemoveMember(group.id, member.id)}
@@ -198,27 +247,94 @@ export default function GroupsManage() {
                   )}
                 </ul>
 
-                {isLeader && (
+                {isManager && (
                   <>
-                    <form onSubmit={(event) => handleAddMember(event, group.id)} className="mb-5 flex flex-col gap-2 sm:flex-row">
+                    {/* Add a member: a name or a phone number finds the account, then one row of
+                        the results is added. A name is not unique, so the manager picks. */}
+                    <form
+                      onSubmit={(event) => handleSearchMembers(event, group.id)}
+                      className="mb-3 flex flex-col gap-2 sm:flex-row"
+                    >
                       <input
-                        value={memberPhones[group.id] ?? ""}
-                        onChange={(event) => setMemberPhones((current) => ({ ...current, [group.id]: event.target.value }))}
+                        value={memberQueries[group.id] ?? ""}
+                        onChange={(event) =>
+                          setMemberQueries((current) => ({
+                            ...current,
+                            [group.id]: event.target.value,
+                          }))
+                        }
                         required
-                        inputMode="tel"
-                        maxLength={30}
-                        placeholder="شماره تلفن ثبت‌شده کاربر"
-                        aria-label={`شماره تلفن عضو جدید ${group.name}`}
+                        maxLength={60}
+                        placeholder="شماره تلفن یا نام کاربر"
+                        aria-label={`جست‌وجوی کاربر برای گروه ${group.name}`}
                         className="min-w-0 flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm"
                       />
                       <button
                         type="submit"
-                        disabled={busy === `member-${group.id}`}
+                        disabled={busy === `search-${group.id}`}
                         className="rounded-lg border border-primary-300 px-4 py-2 text-sm font-medium text-primary-800 hover:bg-primary-50 disabled:opacity-60"
                       >
-                        افزودن عضو
+                        {busy === `search-${group.id}` ? "در حال جست‌وجو…" : "جست‌وجو"}
                       </button>
                     </form>
+
+                    {memberMatches[group.id] && (
+                      <div className="mb-5 rounded-lg border border-primary-100 bg-primary-50/40 p-3">
+                        {memberMatches[group.id].length === 0 ? (
+                          <p className="text-xs text-gray-500">
+                            کاربری با این مشخصات پیدا نشد.
+                          </p>
+                        ) : (
+                          <ul className="divide-y divide-primary-100">
+                            {memberMatches[group.id].map((candidate) => (
+                              <li
+                                key={candidate.id}
+                                className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm"
+                              >
+                                <div className="min-w-0">
+                                  <span className="font-medium text-gray-800">
+                                    {candidate.fullName || candidate.username}
+                                  </span>
+                                  <span
+                                    className="ms-2 font-mono text-xs text-gray-500"
+                                    dir="ltr"
+                                  >
+                                    {candidate.username}
+                                  </span>
+                                  {candidate.phoneHint && (
+                                    <span
+                                      className="ms-2 font-mono text-xs text-gray-400"
+                                      dir="ltr"
+                                      title="چهار رقم آخر شماره تلفن"
+                                    >
+                                      ••••{candidate.phoneHint}
+                                    </span>
+                                  )}
+                                </div>
+                                {candidate.alreadyMember ? (
+                                  <span className="text-xs text-success-700">
+                                    عضو گروه است
+                                  </span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleAddMember(group.id, candidate)
+                                    }
+                                    disabled={busy === `member-${candidate.id}`}
+                                    className="text-xs font-medium text-primary-700 hover:text-primary-900 disabled:opacity-50"
+                                  >
+                                    {busy === `member-${candidate.id}`
+                                      ? "در حال افزودن…"
+                                      : "افزودن عضو"}
+                                  </button>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
 
                     <form onSubmit={(event) => handleSubmitMessage(event, group)}>
                       <label htmlFor={`message-${group.id}`} className="mb-2 block text-sm font-semibold text-gray-700">

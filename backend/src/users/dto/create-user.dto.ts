@@ -19,7 +19,7 @@ export class CreateUserDto {
   @MinLength(6, { message: 'رمز عبور باید حداقل ۶ کاراکتر باشد' })
   password!: string;
 
-  @ApiProperty({ enum: UserRole, default: UserRole.REGISTRAR })
+  @ApiProperty({ enum: UserRole, default: UserRole.USER })
   @IsEnum(UserRole)
   role!: UserRole;
 
@@ -32,9 +32,4 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   phone?: string;
-
-  @ApiPropertyOptional({ description: 'Manager user id' })
-  @IsOptional()
-  @IsString()
-  managerId?: string;
 }

@@ -1,7 +1,14 @@
 // src/api/auth.ts
 import { api, publicApi } from "./axios";
 
-export type UserRole = "REGISTRAR" | "REPORT_VIEWER" | "ADMIN";
+/**
+ * Role of an account.
+ *
+ * USER is an ordinary account holder. MANAGER runs the site content like an administrator —
+ * projects, tasks, media, the message queue — and ADMIN does that too, plus managing user
+ * accounts. The rule itself lives in src/lib/roles.ts.
+ */
+export type UserRole = "USER" | "MANAGER" | "ADMIN";
 
 export interface LoginPayload {
   username: string;
@@ -19,8 +26,8 @@ export interface CurrentUser {
   role: UserRole;
   fullName?: string | null;
   phone?: string | null;
-  managerId?: string | null;
-  manager?: { id: string; username: string } | null;
+  /** Ids of the groups this user belongs to. The groups they manage carry their id instead. */
+  groupIds: string[];
 }
 
 export async function login(payload: LoginPayload): Promise<LoginResponse> {

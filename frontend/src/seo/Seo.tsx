@@ -1,5 +1,6 @@
 // src/seo/Seo.tsx
 import { useEffect } from "react";
+import { upsertLink, upsertMeta } from "./head";
 import {
   SITE_NAME,
   DEFAULT_OG_IMAGE,
@@ -12,8 +13,10 @@ import {
  *
  * Deliberately dependency-free: react-helmet and its maintained forks have a history of
  * lagging React major versions, and this app only needs title, description, canonical,
- * Open Graph, Twitter and optional JSON-LD. The effect below updates the existing tags
- * in index.html rather than adding duplicates.
+ * Open Graph, Twitter and optional JSON-LD. The tag helpers in ./head update the existing
+ * tags declared in index.html rather than adding duplicates.
+ *
+ * The signed-in panel does not use this component at all — see ./NoSeo.
  *
  * On the prerendered routes this data is also baked into the static HTML by
  * scripts/prerender.mjs, so crawlers that do not run JavaScript still see it.
@@ -26,33 +29,20 @@ export interface SeoProps {
   path: string;
   /** Image URL or path for social previews. Defaults to DEFAULT_OG_IMAGE. */
   image?: string;
+  /**
+   * Pixel size of `image`. The defaults describe the 1200x630 social preview that
+   * index.html declares and that scripts/prerender.mjs warns about; they are written by
+   * <Seo> so that <NoSeo> can strip the whole og:image group on panel pages and have a
+   * later public page put it back.
+   */
+  imageWidth?: number;
+  imageHeight?: number;
   /** "website" for most pages, "article" for content pages. */
   type?: "website" | "article";
-  /** Keep a page out of search results (login, register, admin, 404). */
+  /** Keep a page out of search results without removing its metadata (login, register, 404). */
   noindex?: boolean;
   /** Additional JSON-LD structured data. */
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
-}
-
-/** Finds an existing <meta> by its name or property, or creates it. */
-function upsertMeta(attr: "name" | "property", key: string, content: string): void {
-  let el = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`);
-  if (!el) {
-    el = document.createElement("meta");
-    el.setAttribute(attr, key);
-    document.head.appendChild(el);
-  }
-  el.setAttribute("content", content);
-}
-
-function upsertLink(rel: string, href: string): void {
-  let el = document.head.querySelector<HTMLLinkElement>(`link[rel="${rel}"]`);
-  if (!el) {
-    el = document.createElement("link");
-    el.setAttribute("rel", rel);
-    document.head.appendChild(el);
-  }
-  el.setAttribute("href", href);
 }
 
 export default function Seo({
@@ -60,6 +50,8 @@ export default function Seo({
   description,
   path,
   image,
+  imageWidth = 1200,
+  imageHeight = 630,
   type = "website",
   noindex = false,
   jsonLd,
@@ -91,6 +83,8 @@ export default function Seo({
     if (imageUrl) {
       upsertMeta("property", "og:image", imageUrl);
       upsertMeta("property", "og:image:alt", title);
+      upsertMeta("property", "og:image:width", String(imageWidth));
+      upsertMeta("property", "og:image:height", String(imageHeight));
     }
 
     upsertMeta("name", "twitter:card", "summary_large_image");
@@ -102,7 +96,7 @@ export default function Seo({
     // so make sure the attributes survive whatever the host injects.
     document.documentElement.setAttribute("lang", "fa");
     document.documentElement.setAttribute("dir", "rtl");
-  }, [title, description, canonical, imageUrl, type, noindex]);
+  }, [title, description, canonical, imageUrl, imageWidth, imageHeight, type, noindex]);
 
   // Route-specific JSON-LD, removed when the route changes.
   useEffect(() => {

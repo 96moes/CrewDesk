@@ -3,7 +3,7 @@ import { useEffect, useState, type SyntheticEvent } from "react";
 import { useTasksStore } from "../../stores/tasksStore";
 import type { Task, TaskStatus } from "../../api/tasks";
 import { useProjectsStore } from "../../stores/projectsStore";
-import { useUsersAdminStore } from "../../stores/usersAdminStore";
+import { useUserDirectoryStore } from "../../stores/userDirectoryStore";
 import Modal from "../../components/Modal";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 
@@ -54,8 +54,10 @@ export default function TasksManage() {
     const projectsLoaded = useProjectsStore((s) => s.loaded);
     const fetchProjects = useProjectsStore((s) => s.fetch);
 
-    const users = useUsersAdminStore((s) => s.users);
-    const fetchUsers = useUsersAdminStore((s) => s.fetch);
+    // The assignee picker: id and username only, which is what every management role may read.
+    const directory = useUserDirectoryStore((s) => s.entries);
+    const directoryLoaded = useUserDirectoryStore((s) => s.loaded);
+    const fetchDirectory = useUserDirectoryStore((s) => s.fetch);
 
     const [open, setOpen] = useState(false);
     const [editing, setEditing] = useState<Task | null>(null);
@@ -74,8 +76,8 @@ export default function TasksManage() {
     }, [projectsLoaded, fetchProjects]);
 
     useEffect(() => {
-        if (users.length === 0) fetchUsers();
-    }, [users.length, fetchUsers]);
+        if (!directoryLoaded) fetchDirectory();
+    }, [directoryLoaded, fetchDirectory]);
 
     const openCreate = () => {
         setEditing(null);
@@ -303,7 +305,7 @@ export default function TasksManage() {
                             className="w-full rounded-lg border border-primary-200 px-3 py-2 outline-none focus:border-primary-500"
                         >
                             <option value="">— انتخاب کنید —</option>
-                            {users.map((u) => (
+                            {directory.map((u) => (
                                 <option key={u.id} value={u.id}>
                                     {u.username}
                                 </option>

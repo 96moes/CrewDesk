@@ -44,6 +44,8 @@ async function bootstrap() {
       'ADMIN_PASSWORD',
       'admin',
     ) as string;
+    // ADMIN_ROLE accepts any UserRole, but the seeded account is the only one that can manage
+    // other accounts, so only an ADMIN seed can hand out the other roles afterwards.
     const role = configService.get<string>(
       'ADMIN_ROLE',
       UserRole.ADMIN,

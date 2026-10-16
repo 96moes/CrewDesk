@@ -16,7 +16,7 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { UserRole } from '../users/entities/user.entity';
+import { MANAGEMENT_ROLES } from '../auth/role-sets';
 
 @ApiTags('projects')
 @ApiBearerAuth()
@@ -36,20 +36,20 @@ export class ProjectsController {
     return this.projectsService.findOne(id);
   }
 
-  // Admin-only writes
-  @Roles(UserRole.ADMIN)
+  // Management-only writes: administrators and managers alike.
+  @Roles(...MANAGEMENT_ROLES)
   @Post()
   create(@Body() dto: CreateProjectDto) {
     return this.projectsService.create(dto);
   }
 
-  @Roles(UserRole.ADMIN)
+  @Roles(...MANAGEMENT_ROLES)
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateProjectDto) {
     return this.projectsService.update(id, dto);
   }
 
-  @Roles(UserRole.ADMIN)
+  @Roles(...MANAGEMENT_ROLES)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.projectsService.remove(id);

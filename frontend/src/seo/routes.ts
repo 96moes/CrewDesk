@@ -3,15 +3,25 @@
 /**
  * Per-route SEO metadata — the single source of truth for the app.
  *
- * Every public route gets a unique title and description. Duplicated titles are one of
- * the most common reasons a site "does not rank": Google has to guess which page is
- * relevant, and usually picks none of them.
+ * Every route listed here is a page a visitor can reach without an account, and each
+ * gets a unique title and description. Duplicated titles are one of the most common
+ * reasons a site "does not rank": Google has to guess which page is relevant, and
+ * usually picks none of them.
+ *
+ * The signed-in panel (/dashboard and everything under it) is deliberately absent.
+ * Those pages are behind a login, so they carry no SEO metadata at all — no title,
+ * description, canonical or social tags, only a robots directive keeping them out of
+ * search results. src/seo/NoSeo.tsx removes any metadata left behind by the public
+ * page the visitor came from, and src/seo/SeoRoute.tsx routes them there.
  *
  * Route inventory here must stay in sync with two other places:
  *   - src/App.tsx            (the actual React Router routes)
- *   - scripts/seo-routes.mjs (used by the sitemap and prerender build steps)
+ *   - scripts/seo-routes.mjs (used by the sitemap and prerender build steps, and which
+ *                             lists the panel paths in PRIVATE_PATHS for exactly the
+ *                             reason above)
  *
- * `scripts/check-seo.mjs` fails the build when this list and scripts/seo-routes.mjs drift.
+ * `scripts/check-seo.mjs` fails the build when these drift apart, and when a route in
+ * App.tsx is in neither this list nor PRIVATE_PATHS.
  */
 
 export interface RouteSeo {
@@ -25,9 +35,9 @@ export interface RouteSeo {
    * Include this route in sitemap.xml.
    *
    * Prerendering is controlled separately by the `prerender` flag in
-   * scripts/seo-routes.mjs, because it has a different constraint: a route behind
-   * ProtectedRoute cannot be prerendered anonymously (the crawler would capture the
-   * redirect to /login instead of the page).
+   * scripts/seo-routes.mjs, because it answers a different question: /login and
+   * /register are public and are prerendered, but they are account pages with nothing
+   * to rank for, so they stay out of the sitemap.
    */
   index?: boolean;
 }
@@ -92,54 +102,6 @@ export const ROUTES: RouteSeo[] = [
     title: "ثبت‌نام | قوم سلمان",
     description:
       "برای مشارکت در فعالیت‌های قوم سلمان ثبت‌نام کنید. پس از ثبت‌نام، امکان مشاهده پروژه‌ها و وظایف برای شما فعال می‌شود.",
-  },
-  {
-    path: "/dashboard/user",
-    title: "داشبورد کاربری | قوم سلمان",
-    description:
-      "اطلاعات حساب، مسئول مستقیم، پروژه‌های در دست اجرا و وظایف محول‌شده به شما در قوم سلمان.",
-  },
-  {
-    path: "/dashboard/groups",
-    title: "گروه‌های من | قوم سلمان",
-    description:
-      "گروه بسازید، اعضا را با شماره تلفن اضافه کنید و برای همه اعضا یک پیام ثبت کنید.",
-  },
-  {
-    path: "/dashboard",
-    title: "پنل مدیریت | قوم سلمان",
-    description:
-      "پنل مدیریت قوم سلمان: نمای کلی، مدیریت کاربران، پروژه‌ها، وظایف و صف پیام‌های گروهی.",
-  },
-  {
-    path: "/dashboard/users",
-    title: "مدیریت کاربران | قوم سلمان",
-    description:
-      "افزودن، ویرایش و حذف کاربران قوم سلمان و تعیین نقش دسترسی برای هر کاربر.",
-  },
-  {
-    path: "/dashboard/projects",
-    title: "مدیریت پروژه‌ها | قوم سلمان",
-    description:
-      "ایجاد، ویرایش و پیگیری وضعیت پروژه‌های قوم سلمان و مشاهده پیشرفت هر پروژه.",
-  },
-  {
-    path: "/dashboard/tasks",
-    title: "مدیریت وظایف | قوم سلمان",
-    description:
-      "تعریف وظیفه برای اعضا، تعیین مسئول و مهلت انجام، و پیگیری وضعیت وظایف قوم سلمان.",
-  },
-  {
-    path: "/dashboard/bulk-messages",
-    title: "صف پیام‌های گروهی | قوم سلمان",
-    description:
-      "پیام‌های ثبت‌شده برای اعضای گروه‌ها را یک‌به‌یک کپی کنید و وضعیت ارسال هر پیام را ثبت کنید.",
-  },
-  {
-    path: "/dashboard/gallery",
-    title: "مدیریت گالری | قوم سلمان",
-    description:
-      "افزودن، ویرایش و حذف تصاویر و ویدیوهای گالری، تعیین ترتیب نمایش و انتشار یا پنهان‌سازی هر آیتم.",
   },
 ];
 

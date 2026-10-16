@@ -561,7 +561,7 @@ Field reference (`FRONTEND_URL` and `PORT` are the ones that bite in production)
 | `DB_USERNAME` / `DB_PASSWORD` / `DB_DATABASE` | from step 3 | |
 | `JWT_SECRET` | 48+ random bytes | Changing it invalidates every issued token. |
 | `SEED_ADMIN` | `true` for first start, then `false` | The seed creates the admin only if the username is absent. |
-| `ADMIN_USERNAME` / `ADMIN_PASSWORD` / `ADMIN_ROLE` | your values | `ADMIN_ROLE` ∈ `ADMIN`, `REGISTRAR`, `REPORT_VIEWER`. |
+| `ADMIN_USERNAME` / `ADMIN_PASSWORD` / `ADMIN_ROLE` | your values | `ADMIN_ROLE` ∈ `ADMIN`, `MANAGER`, `USER`. It only affects the seeded account; the API has these three roles. Keep `ADMIN` here — only an administrator can manage the accounts that hold the others. |
 
 ### 8.2 Install the systemd unit
 
@@ -987,6 +987,65 @@ Upload a fresh `package-lock.json` with the backend every time, or `npm ci` will
 Take a database backup **before** an update that changes entities, because `synchronize: true`
 applies schema changes automatically at startup.
 
+#### Updating from the three-role schema (`REGISTRAR` / `REPORT_VIEWER` / `ADMIN`)
+
+The API now has two roles, `USER` and `ADMIN`. On a database that still holds the old values, the
+new build **cannot start**: TypeORM tries to convert the `user_role_enum` column and PostgreSQL
+rejects the rows that hold a removed value (`invalid input value for enum user_role_enum:
+"REGISTRAR"`). Convert the data first.
+
+```bash
+# --- On the server, before restarting the API ---
+sudo -u postgres pg_dump --clean --if-exists crewdesk | gzip > /var/backups/crewdesk/before-roles_$(date +%F_%H%M).sql.gz
+sudo -u postgres psql -d crewdesk -f /opt/crewdesk/deploy/scripts/migrate-roles-to-user.sql
+```
+
+The script ships in `deploy/scripts/migrate-roles-to-user.sql`. It maps `ADMIN` to `ADMIN` and
+every legacy value to `USER`, then rebuilds the enum so only the two current values remain. It runs
+in one transaction and is safe to run twice — a second run reports that there is nothing to do.
+Then continue with the restart above.
+
+Accounts that held `REGISTRAR` or `REPORT_VIEWER` lose nothing: neither role ever granted a
+permission that `USER` does not have, because every restricted endpoint is `ADMIN`-only.
+
+#### Updating to the `MANAGER` role
+
+The API gained a third role, `MANAGER`: it runs the site content exactly like an administrator —
+projects, tasks, gallery, social links and the message queue — and the one thing it cannot touch is
+user accounts. That is what `/dashboard/users` and the account endpoints in
+`backend/src/users/users.controller.ts` keep for `ADMIN`; the rule itself is `MANAGEMENT_ROLES` in
+`backend/src/auth/role-sets.ts`.
+
+**Nothing to migrate.** The enum gains a value and no existing row changes, so `synchronize: true`
+adds it on the first start of the new build (`ALTER TYPE user_role_enum ADD VALUE 'MANAGER'` on
+PostgreSQL 12 and newer). Every account keeps the role it had, and there is no script to run before
+the restart. Hand the role out afterwards from `/dashboard/users` — only an administrator can.
+
+#### Updating from the `groups."leaderId"` schema
+
+A group's manager used to be stored as `groups."leaderId"`, and users carried a self-referencing
+`"managerId"` for "who this user reports to". The column is now `groups."managerId"` and the
+user-level supervisor has been removed; a user's place in the organisation is the groups they
+belong to (`groupIds` on every user payload, derived from `group_members`) and the groups they
+manage.
+
+```bash
+# --- On the server, before restarting the API ---
+sudo -u postgres pg_dump --clean --if-exists crewdesk | gzip > /var/backups/crewdesk/before-group-manager_$(date +%F_%H%M).sql.gz
+sudo -u postgres psql -d crewdesk -f /opt/crewdesk/deploy/scripts/rename-group-leader-to-manager.sql
+```
+
+The rename has to happen outside the API. `synchronize: true` never renames a column: left to
+itself it adds `"managerId"` and drops `"leaderId"`, which both loses the record of who manages
+each group and fails on a table that already has rows, because a new `NOT NULL` column cannot be
+filled for them. The script preserves the data and the foreign key, and is safe to run twice.
+
+Dropping the old `user."managerId"` needs no script: the column is nullable, nothing references
+it, and synchronize removes it on the first start.
+
+Upgrading an installation that predates both changes means running both scripts, in either order,
+before the restart.
+
 ### 14.2 Backups
 
 `pg_dump` to a timestamped file, keep 14 days, and copy backups off the server:
@@ -1064,7 +1123,7 @@ by itself. Verify once with `sudo reboot`, then re-run step 13.
 | `https://…/dashboard` → 404 on refresh | SPA fallback missing or `index.html` missing from the web root | Confirm `try_files $uri $uri/index.html $uri/ /index.html;` and `ls /var/www/crewdesk/index.html` |
 | Users see an old version after a deploy | The HTML shell was cached | The config sets `no-store` on `/index.html` and on prerendered pages; check a hard refresh and that `/assets/` filenames changed |
 | Canonical URLs show `localhost` or `example.com` | The build ran without `frontend/.env.production`, so a development `.env` supplied `VITE_SITE_URL` | Create `.env.production` with the real origin and rebuild with `npm run build:prod` — it now fails instead of shipping this |
-| A page shows the previous page's title | The route has no entry in `src/seo/routes.ts` | Add it; `npm run seo:check` (part of the build) flags this |
+| A page shows the previous page's title | The route has no entry in `src/seo/routes.ts` | Add it; `npm run seo:check` (part of the build) flags this. The signed-in panel is the deliberate exception — those pages carry no metadata by design and are listed in `PRIVATE_PATHS` |
 | `/about` shows the login page's content | The route is behind `ProtectedRoute` and was prerendered anonymously | Mark it `prerender: false` in `scripts/seo-routes.mjs` |
 | `robots.txt` or `sitemap.xml` returns the app HTML | They were not generated, so the SPA fallback served `index.html` | Rebuild; the files are produced by the SEO pipeline. Check `ls /var/www/crewdesk/robots.txt` |
 | Search Console: "Crawled – currently not indexed" | Normal for a new site; also happens when a page has little unique content | Request indexing, and make sure each page has a distinct title and description |
@@ -1075,6 +1134,8 @@ by itself. Verify once with `sudo reboot`, then re-run step 13.
 | Pages are not prerendered (crawlers see an empty shell) | No Chrome/Chromium/Edge on the build machine, so the step was skipped | Install a browser or set `CHROME_PATH`, then rebuild; the skip is warned about, not silent |
 | API returns 502 from nginx | The Node process is down or not listening on 3000 | `systemctl status crewdesk-api` and `journalctl -u crewdesk-api -n 80` |
 | API returns 500 on every endpoint | Database connection or credentials | Check the journal for a `pg` error; re-test with the step 3 `psql` command |
+| API will not start after an update, log shows `invalid input value for enum user_role_enum` | The database still holds the removed `REGISTRAR`/`REPORT_VIEWER` roles | Run `deploy/scripts/migrate-roles-to-user.sql` as in step 14.1, then restart the API |
+| API will not start after an update, log shows `column "managerId" contains null values` on `groups` | The database still has `groups."leaderId"` | Run `deploy/scripts/rename-group-leader-to-manager.sql` as in step 14.1, then restart the API |
 | `npm run build` killed, "Killed"/OOM | Not enough RAM during the Vite/TypeScript build | Add swap (step 2) or build on your workstation and upload |
 | `EACCES` reading `.env` | Wrong owner/permissions | `sudo chown crewdesk:crewdesk .env && sudo chmod 600 .env` |
 | API restart loops with `EADDRINUSE` | Something else already holds port 3000 | `sudo ss -ltnp \| grep 3000`, stop the old process |

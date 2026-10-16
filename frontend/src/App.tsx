@@ -1,8 +1,11 @@
 // src/App.tsx
 import { Routes, Route } from "react-router";
 import MainLayout from "./layouts/MainLayout";
+import UserLayout from "./layouts/UserLayout";
+import AdminLayout from "./layouts/AdminLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
+import ManagementRoute from "./components/ManagementRoute";
 import SeoRoute from "./seo/SeoRoute";
 
 import Home from "./pages/Home";
@@ -17,7 +20,6 @@ import Register from "./pages/Register";
 import UserDashboard from "./pages/UserDashboard";
 import NotFound from "./pages/NotFound";
 
-import AdminLayout from "./pages/admin/AdminLayout";
 import Overview from "./pages/admin/Overview";
 import UsersManage from "./pages/admin/UsersManage";
 import ProjectsManage from "./pages/admin/ProjectsManage";
@@ -34,7 +36,7 @@ export default function App() {
 
       <Routes>
         {/*
-          Public site.
+          1. Public site — everything anyone can open without an account.
         */}
         <Route element={<MainLayout />}>
           <Route path="/" element={<Home />} />
@@ -51,37 +53,44 @@ export default function App() {
         </Route>
 
         {/*
-          Signed-in panel — deliberately OUTSIDE MainLayout, and shared by two routes so the frame
-          is identical for both (PanelShell renders it):
-
-            /dashboard/user   the generic user dashboard
-            /dashboard/*      the panel, incl. group management for group leaders
-
-          The public header and footer are site navigation; inside a signed-in area they compete
-          with the panel nav, wrap the tables in a max-width column, and offer links back into the
-          public site. PanelShell carries its own "view site" link instead.
-
-          The panel is NOT wrapped in AdminRoute as a whole. Group management lives here too, but
-          the backend grants group endpoints to any signed-in user — only the bulk-message queue
-          is ADMIN (see backend/src/groups/groups.controller.ts). So the parent guard is
-          ProtectedRoute and AdminRoute is applied per admin-only page.
+          The two signed-in sections are deliberately OUTSIDE MainLayout, because the public
+          header and footer are site navigation: inside a signed-in area they compete with the
+          panel navigation, wrap the tables in a max-width column, and offer links back out to
+          the public site. Each section has its own layout; both render the same frame
+          (components/PanelShell.tsx) with their own navigation.
         */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard/user" element={<UserDashboard />} />
+          {/*
+            2. Signed-in user area — open to any account holder, whatever their role.
+            An administrator or manager gets the panel links appended to the navigation here;
+            no one else ever sees them (layouts/sectionNav.tsx).
+          */}
+          <Route element={<UserLayout />}>
+            <Route path="/dashboard/user" element={<UserDashboard />} />
+            {/* Group managers run their own groups; no role restriction, because the
+                backend grants the group endpoints to any signed-in user. */}
+            <Route path="/dashboard/groups" element={<GroupsManage />} />
+          </Route>
 
+          {/*
+            3. Management panel. The section is not wrapped in a guard as a whole — the guards
+            are applied per page, so someone without the role for a page is redirected to
+            /dashboard/groups rather than being bounced out of the panel entirely.
+          */}
           <Route path="/dashboard" element={<AdminLayout />}>
-            {/* Admin-only pages */}
-            <Route element={<AdminRoute />}>
+            {/* Content pages: administrators and managers alike. */}
+            <Route element={<ManagementRoute />}>
               <Route index element={<Overview />} />
-              <Route path="users" element={<UsersManage />} />
               <Route path="projects" element={<ProjectsManage />} />
               <Route path="tasks" element={<TasksManage />} />
               <Route path="bulk-messages" element={<BulkMessages />} />
               <Route path="gallery" element={<MediaManage />} />
             </Route>
 
-            {/* Group leaders manage their own groups; no role restriction */}
-            <Route path="groups" element={<GroupsManage />} />
+            {/* User accounts: administrators only — the one page a manager may not open. */}
+            <Route element={<AdminRoute />}>
+              <Route path="users" element={<UsersManage />} />
+            </Route>
           </Route>
         </Route>
       </Routes>

@@ -9,10 +9,12 @@
 // `index: true`      -> included in sitemap.xml
 // `prerender: false` -> excluded from the static prerender step
 //
-// Routes behind ProtectedRoute / AdminRoute are marked `prerender: false`: an anonymous
-// prerender run follows the redirect to /login, so the generated HTML would carry the
-// login page's title and content under the protected URL. They are also noindex, so
-// there is nothing to gain from prerendering them.
+// Routes behind ProtectedRoute / AdminRoute are absent from ROUTES entirely: the signed-in
+// panel carries no SEO metadata (see src/seo/NoSeo.tsx), so there is nothing for the sitemap
+// or the prerender step to do with it. It could not be prerendered either — an anonymous
+// prerender run follows the redirect to /login, so the generated HTML would carry the login
+// page's title and content under the protected URL. The paths are listed in PRIVATE_PATHS
+// below so scripts/check-seo.mjs can still prove that the app and these lists agree.
 
 export const ROUTES = [
   { path: "/", index: true },
@@ -24,18 +26,30 @@ export const ROUTES = [
   { path: "/events", index: true },
   { path: "/login", index: false },
   { path: "/register", index: false },
-  { path: "/dashboard/user", index: false, prerender: false },
-  { path: "/dashboard/groups", index: false, prerender: false },
-  { path: "/dashboard", index: false, prerender: false },
-  { path: "/dashboard/users", index: false, prerender: false },
-  { path: "/dashboard/projects", index: false, prerender: false },
-  { path: "/dashboard/tasks", index: false, prerender: false },
-  { path: "/dashboard/bulk-messages", index: false, prerender: false },
-  { path: "/dashboard/gallery", index: false, prerender: false },
+];
+
+/**
+ * Routes behind a login. They are intentionally missing from ROUTES: no title, no
+ * description, no canonical, no social tags, and nothing in sitemap.xml or the prerender
+ * step. src/seo/SeoRoute.tsx matches them by prefix (NO_SEO_PREFIXES) and strips whatever
+ * metadata the previously visited public page left in the head.
+ *
+ * Keep this in step with the <Route> elements in src/App.tsx; check-seo.mjs fails the build
+ * when a route appears in one and not the other.
+ */
+export const PRIVATE_PATHS = [
+  "/dashboard/user",
+  "/dashboard/groups",
+  "/dashboard",
+  "/dashboard/users",
+  "/dashboard/projects",
+  "/dashboard/tasks",
+  "/dashboard/bulk-messages",
+  "/dashboard/gallery",
 ];
 
 /** Every path declared in the app, including the catch-all used for drift checking. */
-export const ALL_PATHS = [...ROUTES.map((r) => r.path), "*"];
+export const ALL_PATHS = [...ROUTES.map((r) => r.path), ...PRIVATE_PATHS, "*"];
 
 export const SITEMAP_PATHS = ROUTES.filter((r) => r.index === true).map((r) => r.path);
 

@@ -3,37 +3,31 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import {
     FaUserTie,
-    FaProjectDiagram,
     FaTasks,
     FaCheckCircle,
     FaClock,
     FaHourglassHalf,
     FaPhone,
-    FaTachometerAlt,
     FaUsersCog,
 } from "react-icons/fa";
-import PanelShell, { type PanelNavItem } from "../components/PanelShell";
 import { useAuthStore } from "../stores/authStore";
+import { canManageContent, canManageUsers } from "../lib/roles";
 import { getMyProfile, type ProfileResponse } from "../api/users";
 import { getMyProjects, type Project } from "../api/projects";
 import { getMyTasks, type Task, type TaskStatus } from "../api/tasks";
+import { getMyGroups, type ManagedGroup } from "../api/groups";
 
 /**
  * The generic signed-in dashboard, and the default landing page after login.
  *
- * The layout comes from PanelShell, which the admin panel renders too, so this page has the same
- * top bar and sidebar as the panel rather than the public header and footer. Only these two items
- * are in its navigation, because it is the whole of this user's area; groups live in the panel
- * alongside it and are linked here so a group leader can find them.
+ * This page renders its content only. The frame, the navigation and the role-aware links come
+ * from layouts/UserLayout.tsx, which wraps this route — so the layout decides what a visitor
+ * may navigate to, and this file never has to know their role for that purpose.
  */
-const USER_NAV: PanelNavItem[] = [
-    { to: "/dashboard/user", label: "داشبورد من", icon: <FaTachometerAlt />, end: true },
-    { to: "/dashboard/groups", label: "گروه‌ها", icon: <FaUsersCog /> },
-];
 
 const ROLE_LABELS: Record<string, string> = {
-    REGISTRAR: "ثبت‌کننده",
-    REPORT_VIEWER: "بیننده گزارش",
+    USER: "کاربر",
+    MANAGER: "سرپرست",
     ADMIN: "مدیر",
 };
 
@@ -68,6 +62,7 @@ export default function UserDashboard() {
     const [profile, setProfile] = useState<ProfileResponse | null>(null);
     const [projects, setProjects] = useState<Project[]>([]);
     const [tasks, setTasks] = useState<Task[]>([]);
+    const [groups, setGroups] = useState<ManagedGroup[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -78,12 +73,20 @@ export default function UserDashboard() {
     useEffect(() => {
         let cancelled = false;
         setLoading(true);
-        Promise.all([getMyProfile(), getMyProjects(), getMyTasks()])
-            .then(([p, pr, t]) => {
+        Promise.all([
+            getMyProfile(),
+            getMyProjects(),
+            getMyTasks(),
+            // The group list only supplies names for the ids the profile already carries, so a
+            // failure here must not take the rest of the dashboard down with it.
+            getMyGroups().catch(() => [] as ManagedGroup[]),
+        ])
+            .then(([p, pr, t, g]) => {
                 if (cancelled) return;
                 setProfile(p);
                 setProjects(pr);
                 setTasks(t);
+                setGroups(g);
             })
             .catch((err) => {
                 if (cancelled) return;
@@ -97,35 +100,46 @@ export default function UserDashboard() {
 
     if (loading && !profile) {
         return (
-            <PanelShell title="داشبورد من" nav={USER_NAV}>
-                <div className="py-10 text-center text-gray-500">
-                    در حال بارگذاری اطلاعات...
-                </div>
-            </PanelShell>
+            <div className="py-10 text-center text-gray-500">
+                در حال بارگذاری اطلاعات...
+            </div>
         );
     }
 
     if (error) {
         return (
-            <PanelShell title="داشبورد من" nav={USER_NAV}>
-                <div className="rounded-xl bg-error-50 p-6 text-sm text-error-700">
-                    {error}
-                </div>
-            </PanelShell>
+            <div className="rounded-xl bg-error-50 p-6 text-sm text-error-700">
+                {error}
+            </div>
         );
     }
 
     const doneCount = tasks.filter((t) => t.status === "done").length;
     const progress = tasks.length ? Math.round((doneCount / tasks.length) * 100) : 0;
 
+    // The groups this user relates to: what /groups/my returned, or — if that call failed —
+    // the bare ids the profile carries, so the card still shows something true.
+    const groupEntries =
+        groups.length > 0
+            ? groups.map((group) => ({
+                  id: group.id,
+                  name: group.name as string | null,
+                  isManager: group.managerId === profile?.id,
+              }))
+            : (profile?.groupIds ?? []).map((id) => ({
+                  id,
+                  name: null as string | null,
+                  isManager: false,
+              }));
+
     return (
-        <PanelShell title="داشبورد من" nav={USER_NAV}>
+        <>
             <div className="mb-6">
                 <h1 className="text-2xl font-bold text-primary-800">
                     داشبورد {profile?.username ?? user?.username ?? ""}
                 </h1>
                 <p className="mt-1 text-sm text-gray-500">
-                    اطلاعات حساب، مسئول مستقیم و پروژه‌های در دست اجرا
+                    اطلاعات حساب، گروه‌هایی که در آن‌ها عضو هستید و پروژه‌های در دست اجرا
                 </p>
             </div>
 
@@ -167,24 +181,47 @@ export default function UserDashboard() {
                     </dl>
                 </div>
 
-                {/* Manager */}
+                {/* The user's groups. /groups/my returns the groups they manage as well as the
+                    ones they belong to; profile.groupIds covers the case where that call failed
+                    but the ids are still known. */}
                 <div className="rounded-xl border border-primary-100 bg-white p-6">
                     <div className="mb-3 flex items-center gap-2 text-primary-700">
-                        <FaProjectDiagram />
-                        <h2 className="font-semibold">مسئول مستقیم</h2>
+                        <FaUsersCog />
+                        <h2 className="font-semibold">گروه‌های من</h2>
                     </div>
-                    {profile?.manager ? (
-                        <>
-                            <p className="text-lg font-bold text-gray-800">
-                                {profile.manager.username}
-                            </p>
-                            <p className="mt-1 text-xs text-gray-500">
-                                برای هماهنگی با مسئول خود از طریق تلگرام اقدام کنید.
-                            </p>
-                        </>
+                    {groupEntries.length > 0 ? (
+                        <ul className="space-y-2">
+                            {groupEntries.map((entry) => (
+                                <li
+                                    key={entry.id}
+                                    className="rounded-lg bg-primary-50/70 px-3 py-2"
+                                >
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="text-sm font-medium text-gray-800">
+                                            {entry.name ?? "گروه"}
+                                        </span>
+                                        <span
+                                            className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                                                entry.isManager
+                                                    ? "bg-primary-100 text-primary-800"
+                                                    : "bg-gray-100 text-gray-600"
+                                            }`}
+                                        >
+                                            {entry.isManager ? "مدیر گروه" : "عضو"}
+                                        </span>
+                                    </div>
+                                    <p
+                                        className="mt-0.5 font-mono text-[11px] text-gray-500"
+                                        dir="ltr"
+                                    >
+                                        {entry.id}
+                                    </p>
+                                </li>
+                            ))}
+                        </ul>
                     ) : (
                         <p className="text-sm text-gray-500">
-                            مسئولی برای شما تعیین نشده است.
+                            هنوز عضو هیچ گروهی نیستید.
                         </p>
                     )}
                 </div>
@@ -296,17 +333,22 @@ export default function UserDashboard() {
                 )}
             </div>
 
-            {/* Admin notice */}
-            {profile?.role === "ADMIN" && (
+            {/* Management notice — administrators and managers both run the panel, so the
+                wording only differs in what each of them may manage there. */}
+            {canManageContent(profile?.role) && (
                 <div className="mt-6 rounded-xl border border-primary-200 bg-primary-50 p-5 text-sm text-primary-800">
-                    شما با نقش <b>مدیر</b> وارد شده‌اید. برای مدیریت کاربران، پروژه‌ها و
-                    وظایف می‌توانید به{" "}
+                    شما با نقش <b>{ROLE_LABELS[profile?.role ?? ""]}</b> وارد شده‌اید. برای
+                    مدیریت{" "}
+                    {canManageUsers(profile?.role)
+                        ? "کاربران، پروژه‌ها و وظایف"
+                        : "پروژه‌ها، وظایف و گالری"}{" "}
+                    می‌توانید به{" "}
                     <Link to="/dashboard" className="font-medium underline">
                         داشبورد مدیریتی
                     </Link>{" "}
                     مراجعه کنید.
                 </div>
             )}
-        </PanelShell>
+        </>
     );
 }

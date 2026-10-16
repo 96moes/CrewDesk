@@ -35,9 +35,23 @@ Configure the database connection and replace the development JWT/admin credenti
 | `SEED_ADMIN` | Seed admin at startup when `true` | `true` |
 | `ADMIN_USERNAME` | Seeded admin username | `admin` |
 | `ADMIN_PASSWORD` | Seeded admin password | `admin` |
-| `ADMIN_ROLE` | Seeded admin role | `ADMIN` |
+| `ADMIN_ROLE` | Role for the seeded account: `ADMIN`, `MANAGER` or `USER` | `ADMIN` |
 
-The seeded admin is created only when the username is not already present. The role values are `ADMIN`, `REGISTRAR`, and `REPORT_VIEWER`. Always set strong non-default credentials and a unique JWT secret outside local development.
+The seeded account is created only when the username is not already present. The API has three
+roles, and the difference between them is written down once, in `src/auth/role-sets.ts`:
+
+| Role | May do | Guarded by |
+| --- | --- | --- |
+| `USER` | Everything a signed-in account may do: own dashboard, own projects and tasks, the groups it manages | no `@Roles` restriction |
+| `MANAGER` | All of the above, plus projects, tasks, media, social links, the bulk-message queue and the user directory behind the pickers | `@Roles(...MANAGEMENT_ROLES)` |
+| `ADMIN` | All of the above, plus user accounts: list, read, create, update and delete | `@Roles(UserRole.ADMIN)` |
+
+`USER` is the default for anything created through the API. User accounts are the whole of the
+difference between `MANAGER` and `ADMIN`: every account route in `src/users/users.controller.ts`
+stays administrator-only, and the only user listing a manager may read is `GET /users/directory`,
+which carries nothing but an id and a username. Always set strong non-default credentials and a
+unique JWT secret outside local development. Because only an administrator can manage accounts,
+keep `ADMIN_ROLE=ADMIN` for the seeded account.
 
 `SWAGGER_USER` and `SWAGGER_PASSWORD` are not currently active: Swagger's optional Basic Auth middleware is commented out. Swagger UI is available at `/docs`.
 
@@ -48,11 +62,11 @@ The public gallery page is fed by this module; it previously rendered hardcoded 
 | Method | Route | Access | Purpose |
 | --- | --- | --- | --- |
 | `GET` | `/media` | public | Published items only, ordered by `sortOrder` then newest |
-| `GET` | `/media/admin/all` | `ADMIN` | Every item, including unpublished drafts |
-| `GET` | `/media/:id` | `ADMIN` | A single item |
-| `POST` | `/media` | `ADMIN` | Create |
-| `PATCH` | `/media/:id` | `ADMIN` | Update |
-| `DELETE` | `/media/:id` | `ADMIN` | Delete |
+| `GET` | `/media/admin/all` | `ADMIN`, `MANAGER` | Every item, including unpublished drafts |
+| `GET` | `/media/:id` | `ADMIN`, `MANAGER` | A single item |
+| `POST` | `/media` | `ADMIN`, `MANAGER` | Create |
+| `PATCH` | `/media/:id` | `ADMIN`, `MANAGER` | Update |
+| `DELETE` | `/media/:id` | `ADMIN`, `MANAGER` | Delete |
 
 An item is a `photo` or a `video`. Media is referenced by URL rather than uploaded, because the
 realistic sources are Aparat/YouTube links and images hosted elsewhere.
@@ -92,7 +106,50 @@ npm run start:prod
 
 ## Database
 
-Create a PostgreSQL database, then set `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, and `DB_DATABASE` in `.env`. TypeORM currently has `synchronize: true`; entity tables are synchronized when the app starts. No migrations or migration commands are currently defined. Treat synchronization as a development convenience, not a production migration strategy.
+Create a PostgreSQL database, then set `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, and `DB_DATABASE` in `.env`. TypeORM currently has `synchronize: true`; entity tables are synchronized when the app starts. No migrations or migration commands are currently defined. Treat synchronization as a development convenience, not a production migration strategy. Schema changes that synchronize cannot make safely on its own — renaming a column, for instance — ship as one-off scripts in `../deploy/scripts/`; see step 14.1 of `../DEPLOYMENT.md`.
+
+### Users and groups
+
+A user has a role (`USER`, `MANAGER` or `ADMIN`), a profile, and nothing else: the self-referencing
+`managerId`/"who this user reports to" field was removed. Where a user sits in the organisation is
+expressed through groups instead:
+
+| Fact | Where it lives |
+| --- | --- |
+| Which groups a user belongs to | `group_members` rows. `UsersService` reduces them to `groupIds: string[]` on every user payload — the ids are derived, never stored on the user, so membership cannot disagree with itself. |
+| Who manages a group | `groups."managerId"`, the single user who may change that group's members or submit a message for it. |
+| Who manages a project | `projects."managerId"`, unrelated to group management. |
+
+Membership is written only through the group endpoints (`POST`/`DELETE /groups/:id/members`), which
+is why `groupIds` is read-only in the user DTOs. Adding a member to a group changes the group and
+that user's `groupIds` in the same request.
+
+#### Adding a member by name or by phone
+
+| Method | Route | Access | Purpose |
+| --- | --- | --- | --- |
+| `GET` | `/groups/:id/member-candidates?q=` | the group's manager | Accounts matching `q`, by username, full name or phone number |
+| `POST` | `/groups/:id/members` | the group's manager | Add one: `{ "userId": "…" }`, or `{ "phone": "…" }` |
+
+Only the user in `groups."managerId"` may call either route — a group manager is whoever created
+the group, whatever their role, so the `MANAGER` role has no special access here.
+
+A name is not unique, so `POST` does not take one: the manager searches, the search returns the
+accounts that match, and the add request carries the `userId` they picked. The `phone` form of the
+add request is kept for clients that already send one, and is matched exactly.
+
+`searchMemberCandidates` (`src/groups/groups.service.ts`) is deliberately narrow, because it is the
+one place a group manager can look accounts up by something other than a phone number they already
+know:
+
+- it answers only for a group the caller manages, and only from `MIN_MEMBER_SEARCH_LENGTH` (three)
+  characters upwards, so it cannot be walked through the alphabet;
+- it returns at most `MEMBER_SEARCH_LIMIT` (ten) accounts, each as an id, username, full name and
+  the **last four digits** of the registered phone number — enough to recognise the person the
+  manager had in mind, not enough to collect numbers they never had;
+- a `%` or `_` in the query is escaped, so it matches literally instead of matching everything;
+- accounts already in the group are returned with `alreadyMember: true` rather than hidden, so a
+  manager who searches for someone they already added sees why the result looks as it does.
 
 ## Scripts
 

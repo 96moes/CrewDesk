@@ -4,7 +4,7 @@ import { SocialLinksService } from './social-links.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { UserRole } from '../users/entities/user.entity';
+import { MANAGEMENT_ROLES } from '../auth/role-sets';
 import { UpdateSocialLinksDto } from './dto/update-social-links.dto';
 import { SocialLinksResponseDto } from './dto/social-links-response.dto';
 
@@ -26,7 +26,7 @@ export class SocialLinksController {
   @ApiBearerAuth()
   @Put()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(...MANAGEMENT_ROLES)
   @ApiOkResponse({
     description: 'Social links updated successfully – returns the updated list',
     type: SocialLinksResponseDto,

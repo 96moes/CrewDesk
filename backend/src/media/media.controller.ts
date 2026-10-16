@@ -16,14 +16,15 @@ import { UpdateMediaDto } from './dto/update-media.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { UserRole } from '../users/entities/user.entity';
+import { MANAGEMENT_ROLES } from '../auth/role-sets';
 
 /**
  * Gallery content.
  *
  * `GET /media` is intentionally public: the gallery is a public page and must render for
- * anonymous visitors and for crawlers. Everything that writes is ADMIN-only, and the
- * admin listing (which includes unpublished drafts) is a separate, guarded route.
+ * anonymous visitors and for crawlers. Everything that writes is open to the management roles
+ * (administrator and manager), and the admin listing (which includes unpublished drafts) is a
+ * separate, guarded route.
  */
 @ApiTags('media')
 @Controller('media')
@@ -40,7 +41,7 @@ export class MediaController {
   @ApiBearerAuth()
   @Get('admin/all')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(...MANAGEMENT_ROLES)
   findAll() {
     return this.mediaService.findAll();
   }
@@ -48,7 +49,7 @@ export class MediaController {
   @ApiBearerAuth()
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(...MANAGEMENT_ROLES)
   findOne(@Param('id') id: string) {
     return this.mediaService.findOne(id);
   }
@@ -56,7 +57,7 @@ export class MediaController {
   @ApiBearerAuth()
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(...MANAGEMENT_ROLES)
   create(@Body() dto: CreateMediaDto) {
     return this.mediaService.create(dto);
   }
@@ -64,7 +65,7 @@ export class MediaController {
   @ApiBearerAuth()
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(...MANAGEMENT_ROLES)
   update(@Param('id') id: string, @Body() dto: UpdateMediaDto) {
     return this.mediaService.update(id, dto);
   }
@@ -72,7 +73,7 @@ export class MediaController {
   @ApiBearerAuth()
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(...MANAGEMENT_ROLES)
   remove(@Param('id') id: string) {
     return this.mediaService.remove(id);
   }

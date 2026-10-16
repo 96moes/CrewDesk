@@ -43,6 +43,9 @@ postgres-data/
 *.backup
 *.bak
 
+# Migration scripts are source, not exports, and have to reach the server with a deploy.
+!deploy/scripts/*.sql
+
 # Vite and temporary files
 .vite/
 *.local
