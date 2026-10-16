@@ -1,6 +1,7 @@
 // src/pages/admin/UsersManage.tsx
 import { useEffect, useState } from "react";
 import { useUsersAdminStore } from "../../stores/usersAdminStore";
+import { getMyGroups } from "../../api/groups";
 import Modal from "../../components/Modal";
 import RoleBadge from "../../components/RoleBadge";
 import UserFormModal from "./UserFormModal";
@@ -32,6 +33,34 @@ function PhoneCell({ phone }: { phone?: string | null }) {
     );
 }
 
+/** Renders a user's groups by name, falling back to the id when the name is unknown. */
+function GroupCell({
+    groupIds,
+    groupNames,
+}: {
+    groupIds: string[];
+    groupNames: Record<string, string>;
+}) {
+    if (groupIds.length === 0) return <span className="text-xs text-gray-400">—</span>;
+    return (
+        <div className="flex flex-wrap gap-1">
+            {groupIds.map((groupId) => {
+                const name = groupNames[groupId] ?? groupId;
+                return (
+                    <span
+                        key={groupId}
+                        title={groupId}
+                        dir="ltr"
+                        className="rounded bg-primary-50 px-1.5 py-0.5 text-xs font-medium text-primary-800"
+                    >
+                        {name}
+                    </span>
+                );
+            })}
+        </div>
+    );
+}
+
 export default function UsersManage() {
     const users = useUsersAdminStore((s) => s.users);
     const loading = useUsersAdminStore((s) => s.loading);
@@ -44,9 +73,26 @@ export default function UsersManage() {
     const [confirmDelete, setConfirmDelete] = useState<AdminUser | null>(null);
     const [deleting, setDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState<string | null>(null);
+    const [groupNames, setGroupNames] = useState<Record<string, string>>({});
 
     useEffect(() => {
-        if (!loaded) fetch();
+        let cancelled = false;
+        async function load() {
+            if (!loaded) await fetch();
+            if (cancelled) return;
+            try {
+                const groups = await getMyGroups();
+                const map: Record<string, string> = {};
+                for (const g of groups) map[g.id] = g.name;
+                if (!cancelled) setGroupNames(map);
+            } catch {
+                // Groups are optional context for the table; keep showing ids if lookup fails.
+            }
+        }
+        load();
+        return () => {
+            cancelled = true;
+        };
     }, [loaded, fetch]);
 
     const closeDelete = () => {
@@ -142,22 +188,10 @@ export default function UsersManage() {
                                     <td className="p-3">
                                         {/* Ids of the groups this user is in. Membership lives in
                                             group_members, so this is read-only here. */}
-                                        {u.groupIds.length === 0 ? (
-                                            <span className="text-xs text-gray-400">—</span>
-                                        ) : (
-                                            <div className="flex flex-wrap gap-1">
-                                                {u.groupIds.map((groupId) => (
-                                                    <span
-                                                        key={groupId}
-                                                        title={groupId}
-                                                        dir="ltr"
-                                                        className="rounded bg-primary-50 px-1.5 py-0.5 font-mono text-[11px] text-primary-800"
-                                                    >
-                                                        {groupId.slice(0, 8)}…
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        )}
+                                        <GroupCell
+                                            groupIds={u.groupIds}
+                                            groupNames={groupNames}
+                                        />
                                     </td>
                                     <td className="p-3">
                                         <div className="flex gap-1">
