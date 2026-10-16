@@ -7,10 +7,11 @@ import { UsersController } from './users.controller';
 import { User } from './entities/user.entity';
 import { Project } from '../projects/entities/project.entity';
 import { Task } from '../tasks/entities/task.entity';
+import { Group } from '../groups/entities/group.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Project, Task]),
+    TypeOrmModule.forFeature([User, Project, Task, Group]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
   controllers: [UsersController],

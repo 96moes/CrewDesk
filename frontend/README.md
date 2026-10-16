@@ -92,7 +92,18 @@ while `GET`/`PATCH /groups/admin/bulk-messages` accept both management roles.
 On `/dashboard/groups`, the group's manager adds a member by typing a name or a phone number and
 picking from the accounts the API returns (`GET /groups/:id/member-candidates`); a name is not
 unique, so the pick is what decides. Search results show a username and the last four digits of the
-phone number, never a full number the manager did not already have.
+phone number, never a full number the manager did not already have. The manager can also rename the
+group, hand it to one of its members ("انتقال مدیریت" — which is how a manager leaves, since the API
+refuses to let a group stand without one), and delete it; a member can leave. Every destructive one
+of those asks first through `components/ConfirmDialog.tsx`.
+
+Which group is the caller's comes from the API's `isManager` flag rather than `managerId === user.id`,
+so the controls do not depend on a user object the auth store may not have loaded yet.
+
+The page is a thin frame — it loads the list, creates a group and owns the one notice line — over
+`stores/groupsStore.ts` (the list and every mutation) and `pages/groups/`: `GroupCard.tsx` for one
+group, `MemberList.tsx`, `MemberSearch.tsx` and `MessageComposer.tsx` for the three things that
+happen inside it.
 
 `ManagementRoute` redirects anyone else to `/dashboard/groups` — the page in the user area they can
 actually use — rather than to the panel overview, which would only redirect them again. `AdminRoute`

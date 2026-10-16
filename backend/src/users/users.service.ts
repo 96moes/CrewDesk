@@ -12,6 +12,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Project } from '../projects/entities/project.entity';
 import { Task } from '../tasks/entities/task.entity';
+import { Group } from '../groups/entities/group.entity';
 
 /**
  * What every user endpoint returns: the account fields, never the password, plus the ids of the
@@ -40,6 +41,9 @@ export class UsersService {
 
     @InjectRepository(Task)
     private tasksRepository: Repository<Task>,
+
+    @InjectRepository(Group)
+    private groupsRepository: Repository<Group>,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<UserResponse> {
@@ -124,6 +128,19 @@ export class UsersService {
   }
 
   async remove(id: string): Promise<{ success: boolean }> {
+    // A group belongs to its manager, and the database cascades: deleting this account would delete
+    // every group they run and every membership in those groups, taking them away from people whose
+    // only connection to this account is that they were added to one. So the group has to be dealt
+    // with first — handed to another member, or deleted on purpose.
+    const managedGroups = await this.groupsRepository.count({
+      where: { managerId: id },
+    });
+    if (managedGroups > 0) {
+      throw new ConflictException(
+        `این کاربر مدیر ${managedGroups} گروه است؛ پیش از حذف، مدیریت آن گروه‌ها را منتقل کنید یا گروه‌ها را حذف کنید`,
+      );
+    }
+
     const res = await this.usersRepository.delete(id);
     if (!res.affected) {
       throw new NotFoundException(`User with ID ${id} not found`);

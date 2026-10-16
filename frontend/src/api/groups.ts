@@ -13,6 +13,12 @@ export interface ManagedGroup {
   /** The user who manages this group; only they may change members or post for it. */
   managerId: string;
   managerName: string;
+  /**
+   * Whether the caller manages this group. It decides what the UI offers and whether `phone` is
+   * filled in below, so the client reads it instead of comparing `managerId` with the signed-in
+   * user — a user the auth store may not have loaded yet.
+   */
+  isManager: boolean;
   createdAt: string;
   members: GroupMember[];
 }
@@ -68,6 +74,56 @@ export async function getMyGroups(): Promise<ManagedGroup[]> {
 
 export async function createGroup(name: string): Promise<ManagedGroup> {
   const { data } = await api.post<ManagedGroup>("/groups", { name });
+  return data;
+}
+
+/** Rename a group. The group's manager only. */
+export async function renameGroup(
+  groupId: string,
+  name: string,
+): Promise<ManagedGroup> {
+  const { data } = await api.patch<ManagedGroup>(`/groups/${groupId}`, {
+    name,
+  });
+  return data;
+}
+
+/**
+ * Delete a group. The group's manager only.
+ *
+ * The memberships go with it, but messages already queued for delivery do not: they keep their
+ * group name and lose only the link, so the administrator's queue is unaffected.
+ */
+export async function deleteGroup(
+  groupId: string,
+): Promise<{ success: boolean }> {
+  const { data } = await api.delete<{ success: boolean }>(`/groups/${groupId}`);
+  return data;
+}
+
+/** Leave a group you were added to. A manager cannot leave their own group. */
+export async function leaveGroup(
+  groupId: string,
+): Promise<{ success: boolean }> {
+  const { data } = await api.delete<{ success: boolean }>(
+    `/groups/${groupId}/members/me`,
+  );
+  return data;
+}
+
+/**
+ * Hand the group to one of its members. The group's manager only.
+ *
+ * The outgoing manager is left in the group as an ordinary member, and the response describes the
+ * group from their new point of view — `isManager: false`, member phones withheld.
+ */
+export async function transferGroup(
+  groupId: string,
+  userId: string,
+): Promise<ManagedGroup> {
+  const { data } = await api.post<ManagedGroup>(`/groups/${groupId}/manager`, {
+    userId,
+  });
   return data;
 }
 

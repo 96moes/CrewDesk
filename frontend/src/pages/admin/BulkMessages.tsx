@@ -63,14 +63,14 @@ export default function BulkMessages() {
     setError(null);
     setNotice(null);
     try {
-      await markBulkMessageSent(message.id);
+      // The saved row is what the queue shows: it carries the server's own sentAt rather than a
+      // timestamp this tab guessed.
+      const saved = await markBulkMessageSent(message.id);
       setRequests((current) =>
         (current ?? []).map((request) => ({
           ...request,
           messages: request.messages.map((entry) =>
-            entry.id === message.id
-              ? { ...entry, status: "sent", sentAt: new Date().toISOString() }
-              : entry,
+            entry.id === message.id ? saved : entry,
           ),
         })),
       );

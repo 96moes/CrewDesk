@@ -119,12 +119,14 @@ export default function UserDashboard() {
             ? groups.map((group) => ({
                 id: group.id,
                 name: group.name as string | null,
-                isManager: group.managerId === profile?.id,
+                isManager: group.isManager,
+                memberCount: group.members.length as number | null,
             }))
             : (profile?.groupIds ?? []).map((id) => ({
                 id,
                 name: null as string | null,
                 isManager: false,
+                memberCount: null as number | null,
             }));
 
     return (
@@ -192,24 +194,26 @@ export default function UserDashboard() {
                                     className="rounded-lg bg-primary-50/70 px-3 py-2"
                                 >
                                     <div className="flex items-center justify-between gap-2">
-                                        <span className="text-sm font-medium text-gray-800">
+                                        <Link
+                                            to="/dashboard/groups"
+                                            className="text-sm font-medium text-gray-800 hover:text-primary-800 hover:underline"
+                                        >
                                             {entry.name ?? "گروه"}
-                                        </span>
+                                        </Link>
                                         <span
                                             className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${entry.isManager
-                                                    ? "bg-primary-100 text-primary-800"
-                                                    : "bg-gray-100 text-gray-600"
+                                                ? "bg-primary-100 text-primary-800"
+                                                : "bg-gray-100 text-gray-600"
                                                 }`}
                                         >
                                             {entry.isManager ? "مدیر گروه" : "عضو"}
                                         </span>
                                     </div>
-                                    <p
-                                        className="mt-0.5 font-mono text-[11px] text-gray-500"
-                                        dir="ltr"
-                                    >
-                                        {entry.id}
-                                    </p>
+                                    {entry.memberCount !== null && (
+                                        <p className="mt-0.5 text-[11px] text-gray-500">
+                                            {entry.memberCount} عضو
+                                        </p>
+                                    )}
                                 </li>
                             ))}
                         </ul>
