@@ -44,11 +44,13 @@ The signed-in routes sit **outside** `MainLayout` in `src/App.tsx`. That is inte
 header and footer are site navigation, and inside a signed-in area they compete with the panel
 navigation, wrap the tables in a max-width column, and offer links back out to the public pages.
 
-Both signed-in layouts render `components/PanelShell.tsx`, so the top bar, the navigation — a
-horizontally scrollable strip at the top on small screens, a sticky sidebar beside the content from
-`lg` up — the palette and the full-width content column are identical everywhere. Only the
-navigation items and the panel title differ, and the layout passes those in. The items themselves
-are defined once, in `layouts/sectionNav.tsx`:
+Both signed-in layouts render `components/PanelShell.tsx`, so the bar, the navigation and the
+full-width content column are identical everywhere; only the navigation items and the panel title
+differ, and the layout passes those in. The bar is the public site's bar — sticky and blurred, the
+brand mark and panel name on one side, the links as underlined labels (`lg` and up) that collapse
+into the same hamburger menu the public header opens below that width, and "view site" plus logout
+on the other. Navigation sits along the top so the content keeps the full width; there is no
+sidebar. The items themselves are defined once, in `layouts/sectionNav.tsx`:
 
 | Section and role | Navigation | Title |
 | --- | --- | --- |
